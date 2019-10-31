@@ -9,9 +9,8 @@ import os
 import pprint
 from model import DeepLabv3plus
 from utils import *
-from data.data_preprocessing import inputs_train, inputs_train_, inputs_valid, inputs_test, gts_train, gts_train_, gts_valid, gts_test
 
-trial_num = 21
+trial_num = 1
 
 flags = tf.app.flags
 flags.DEFINE_integer('in_channel', 3, 'input channel dimension')
@@ -38,9 +37,11 @@ flags.DEFINE_integer('start_epoch', 0, 'start epoch')
 flags.DEFINE_integer('end_epoch', 50, 'end epoch')
 flags.DEFINE_boolean('train', False, 'True for training, False for evaluation')
 flags.DEFINE_boolean('restore', True, 'True for retoring, False for raw training')
-flags.DEFINE_string('pre_train_dir', os.path.join("./trials", "trial_{0}".format(20), "sess-{0}".format(99)), 'when retraining, directory to restore')
+flags.DEFINE_string('pre_train_dir', os.path.join("./trials", "trial_{0}".format(20), "sess-{0}".format(99)), 'when retraining, directory to restore. if none, just leave it.')
 flags.DEFINE_integer('restart_epoch', 100, 'restart epoch') 
 flags.DEFINE_integer('re_end_epoch', 200, 're-end epoch')
+flags.DEFINE_boolean('eval_with_test_acc', True, 'True for test accuracies evaluation')
+flags.DEFINE_integer('output_stride_testing', 8, 'output stride in the training mode')
 FLAGS = flags.FLAGS
 
 pprint.pprint(flags.FLAGS.__flags)
@@ -68,6 +69,13 @@ deeplabv3plus = DeepLabv3plus(
 global_variables_list()
 
 if FLAGS.train:
+    from data.data_preprocessing import inputs_train, inputs_train_, inputs_valid, gts_train, gts_train_, gts_valid
+    # inputs, gts: shape [N, H, W, C]
+    # gts must be either 0 or 1 (segmented image; class axis: channel axis)
+    set_gts = [set(gts_train.flatten()), set(gts_train_.flatten()), set(gts_train.flatten())]
+    for i in set_gts:
+        pixel_checker(i)
+    
     if FLAGS.restore:
         saver = tf.train.Saver()
         saver.restore(sess, FLAGS.pre_train_dir)
@@ -98,21 +106,34 @@ if FLAGS.train:
     np.savetxt(os.path.join(FLAGS.save_dir, "miou_valid.txt"), deeplabv3plus.miou_valid_vals)
     np.savetxt(os.path.join(FLAGS.save_dir, "PA_ALL_valid.txt"), deeplabv3plus.PA_ALL_valid_vals)
     
-else:
+else: # testing mode
+    try:
+        from data.test_data_preprocessing import inputs_test, gts_test
+        pixel_checker(set(gts_test.flatten()))
+            
+    except ImportError: # when gts_test is not given
+        from data.test_data_preprocessing import inputs_test
+    
     if FLAGS.restore:
         saver = tf.train.Saver()
         saver.restore(sess, FLAGS.pre_train_dir)
-        test_result = deeplabv3plus.evaluation(
-                                               inputs=inputs_test,
-                                               output_stride=8,
-                                               gts=gts_test
-                                               )
-        seg_test, CEE_test, miou_test, PA_ALL_test = test_result
+        if FLAGS.eval_with_test_acc:
+            test_results = deeplabv3plus.evaluation(
+                                                    inputs=inputs_test,
+                                                    output_stride=FLAGS.output_stride_testing,
+                                                    gts=gts_test
+                                                    )
+            seg_test, CEE_test, miou_test, PA_ALL_test = test_results
+            np.savetxt(os.path.join(FLAGS.save_dir, "test", "CEE_test.txt"), CEE_test)
+            np.savetxt(os.path.join(FLAGS.save_dir, "test", "miou_test.txt"), miou_test)
+            np.savetxt(os.path.join(FLAGS.save_dir, "test", "PA_ALL_test.txt"), PA_ALL_test)
         
-        np.savetxt(os.path.join(FLAGS.save_dir, "test", "CEE_test.txt"), CEE_test)
-        np.savetxt(os.path.join(FLAGS.save_dir, "test", "miou_test.txt"), miou_test)
-        np.savetxt(os.path.join(FLAGS.save_dir, "test", "PA_ALL_test.txt"), PA_ALL_test)
-        
+        else:
+            test_results = deeplabv3plus.evaluation(
+                                                    inputs=inputs_test,
+                                                    output_stride=FLAGS.output_stride_testing,
+                                                    gts=None
+                                                    )
         for i in range(len(seg_test)):
             for c in range(FLAGS.num_class):
                 np.savetxt(os.path.join(FLAGS.save_dir, "test", "test_result%d_class%d.txt" % (i, c)), seg_test[i, :, :, c])

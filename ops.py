@@ -12,7 +12,6 @@ def lr_polynomial_decay(init_lr, global_step, decay_steps, end_lr=0.0, power=1.0
     """
     return (init_lr - end_lr)*(1 - global_step/decay_steps)**power + end_lr
 
-
 def miou_tf(pred, gt, keep_batch_dim=False):
     """
     mean Intersection-Over-Union (mIOU) calculation using TensorFlow
@@ -30,11 +29,9 @@ def miou_tf(pred, gt, keep_batch_dim=False):
     if not keep_batch_dim:
         miou = tf.reduce_mean(iou) # averaging across the batch
         return miou
-    
     else:
         miou = tf.reshape(tf.reduce_mean(iou, axis=-1), [-1, 1]) # not averaged across the batch, shape: [N, 1]
         return miou
-    
     
 def pixel_acc_4D_tf(pred, gt, return_axis='ALL'):
     """
@@ -55,22 +52,17 @@ def pixel_acc_4D_tf(pred, gt, return_axis='ALL'):
     
     if return_axis == 'BC':
         return pixel_acc_batch_channel # shape: [N, C]
-    
     elif return_axis == 'B':
         pixel_acc_batch = tf.reshape(tf.reduce_mean(pixel_acc_batch_channel, axis=-1), [-1, 1])
         return pixel_acc_batch # shape: [N, 1]
-    
     elif return_axis == 'C':
         pixel_acc_channel = tf.reshape(tf.reduce_mean(pixel_acc_batch_channel, axis=0), [-1, 1])
         return pixel_acc_channel # shape: [C, 1]
-    
     elif return_axis == 'ALL':
         pixel_acc_all = tf.reduce_mean(pixel_acc_batch_channel)
         return pixel_acc_all # total averaged, shape: a scalar
-    
     else:
         raise NotImplementedError('Parameter \'return_axis\' should be one of \'BC\', \'B\', \'C\' and \'ALL\'.')
-        
         
 def l_relu(inputs, alpha=0.2, name='leaky_relu'):
     """
@@ -78,7 +70,6 @@ def l_relu(inputs, alpha=0.2, name='leaky_relu'):
     (Maas, A. L. et al., Rectifier nonlinearities imporve neural network acoustic models, Proc. icml. Vol.30. No.1. 2013)
     """
     return tf.maximum(inputs, alpha*inputs) # == tf.nn.leaky_relu(inputs, alpha)
-
 
 def BN(inputs, is_training, name='batch_norm', momentum=0.99, center=True): 
     """
@@ -94,7 +85,6 @@ def BN(inputs, is_training, name='batch_norm', momentum=0.99, center=True):
     """
     with tf.variable_scope(name):
         return tf.layers.batch_normalization(inputs, momentum=momentum, epsilon=1e-5, center=center, training=is_training) 
-    
     
 def conv2d(inputs, FN, name='conv2d', FH=4, FW=4, sdy=1, sdx=1, padding='SAME', bias=True,
            weight_decay_lambda=None, truncated=False, stddev=0.02):
@@ -127,7 +117,6 @@ def conv2d(inputs, FN, name='conv2d', FH=4, FW=4, sdy=1, sdx=1, padding='SAME', 
             b = tf.get_variable(name='bias', shape=[FN], dtype=tf.float32, initializer=tf.constant_initializer(0.0))
             conv_ = tf.nn.bias_add(conv, b)
             return conv_
-        
         
 def atrous_conv2d(inputs, FN, name='atrous_conv2d', rate=1, FH=3, FW=3, padding='SAME', bias=False,
                   weight_decay_lambda=None, truncated=False, stddev=0.02):
@@ -162,8 +151,7 @@ def atrous_conv2d(inputs, FN, name='atrous_conv2d', rate=1, FH=3, FW=3, padding=
             b = tf.get_variable(name='bias', shape=[FN], dtype=tf.float32, initializer=tf.constant_initializer(0.0))
             conv_ = tf.nn.bias_add(conv, b)
             return conv_
-        
-        
+           
 def sep_conv2d(inputs, FN, name, FH=3, FW=3, CM=1, sdy=1, sdx=1, padding='SAME', bias=False, 
                rate=None, is_BN=True, is_training=True,
                weight_decay_lambda=None, truncated=False, stddev=0.02):
@@ -192,22 +180,18 @@ def sep_conv2d(inputs, FN, name, FH=3, FW=3, CM=1, sdy=1, sdx=1, padding='SAME',
                                  regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay_lambda))
             w2 = tf.get_variable(name='pointwise_weight', shape=[1, 1, int(C*CM), FN], dtype=tf.float32, initializer=initializer,
                                  regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay_lambda))
-        
         h = []
         if rate == None:
             h.append(tf.nn.depthwise_conv2d(inputs, w1, strides=[1, sdy, sdx, 1], padding=padding, rate=rate))
             # depthwise convolution (no atrous)
-            
         elif rate == 1:
             h.append(tf.nn.depthwise_conv2d(inputs, w1, strides=[1, sdy, sdx, 1], padding=padding, rate=[rate, rate]))
             # depthwise convolution (no atrous)
-            
         else: # rate > 1
             h.append(tf.nn.depthwise_conv2d(inputs, w1, strides=[1, 1, 1, 1], padding=padding, rate=[rate, rate]))
             # atrous depthwise convolution
             # parameter 'rate': 1-D of size 2 ([rH, rW]; dilation rates in H and W dimensions)
             # in atrous conv., all the strides should be 1.
-            
         if bias:
             b1 = tf.get_variable(name='depthwise_bias', shape=[C], dtype=tf.float32, initializer=tf.constant_initializer(0.0))
             h.append(tf.reshape(tf.nn.bias_add(h[-1], b1), [-1, h[-1].get_shape()[1], h[-1].get_shape()[2], h[-1].get_shape()[3]]))
@@ -216,14 +200,12 @@ def sep_conv2d(inputs, FN, name, FH=3, FW=3, CM=1, sdy=1, sdx=1, padding='SAME',
             h.append(BN(h[-1], is_training, name='bn'))
         
         h.append(tf.nn.conv2d(h[-1], w2, strides=[1, 1, 1, 1], padding='SAME')) # pointwise convolution
-        
         if not bias:
             return h[-1]
         else:
             b2 = tf.get_variable(name='pointwise_bias', shape=[FN], dtype=tf.float32, initializer=tf.constant_initializer(0.0))
             h.append(tf.reshape(tf.nn.bias_add(h[-1], b2), [-1, h[-1].get_shape()[1], h[-1].get_shape()[2], h[-1].get_shape()[3]]))
-            return h[-1]
-        
+            return h[-1]  
         
 def block(inputs, FN1, FN2, FN3, name, first_relu=True, downsampling=False, rates=None, is_training=True, is_res_conv=True,
           weight_decay_lambda=None, truncated=False, stddev=0.02):

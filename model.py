@@ -18,7 +18,6 @@ class Xception:
         self.weight_decay_lambda = weight_decay_lambda
         self.truncated = truncated
         
-      
     def entry_flow(self, inputs, downsampling):
         """
         Entry flow
@@ -45,7 +44,6 @@ class Xception:
                        weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated))
         return c128_feature, h[-1]  
     
-    
     def middle_flow(self, inputs, md):
         """
         Middle flow
@@ -59,7 +57,6 @@ class Xception:
                            is_training=self.is_training, is_res_conv=False,
                            weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated))
         return h[-1]
-
 
     def exit_flow(self, inputs, ed):
         """
@@ -87,27 +84,25 @@ class Xception:
                                is_training=self.is_training,
                                weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
                     self.is_training, name='exit2_bn'))
-        
+
         h.append(tf.nn.relu(h[-1]))
         return h[-1]
-    
     
     def forward(self, inputs, output_stride):
         if output_stride == 16:
             downsampling = True 
             md = [1, 1, 1] # md: middle flow's dilation rate
-            ed = (1, 2) # ed: exit flow's dilation rate
+            ed = [1, 2] # ed: exit flow's dilation rate
             
         elif output_stride == 8:
             downsampling = False
             md = [2, 2, 2]
-            ed = (2, 4)
+            ed = [2, 4]
             
         c128_feature, x = self.entry_flow(inputs, downsampling)
         x = self.middle_flow(x, md)
         x = self.exit_flow(x, ed)
         return c128_feature, x
-    
     
 class ASPP:
     """
@@ -128,7 +123,6 @@ class ASPP:
         self.weight_decay_lambda = weight_decay_lambda
         self.truncated = truncated 
 
-    
     def global_average_pooling_2d(self, inputs, H, W):
         """
         Global average pooling 2-D
@@ -146,8 +140,7 @@ class ASPP:
                                self.is_training, name='global_average_pooling_2d_bn')))
         # bilinear upsampling
         h.append(tf.image.resize_bilinear(h[-1], size=[H, W], align_corners=True))
-        return h[-1]
-        
+        return h[-1] 
         
     def forward(self, inputs, output_stride):
         """
@@ -187,11 +180,9 @@ class ASPP:
             h4 = self.global_average_pooling_2d(inputs, H=H_encoded, W=W_encoded)
             
             h = tf.concat([h0, h1, h2, h3, h4], axis=-1) 
-            
             h = tf.nn.relu(BN(conv2d(h, FN=256, name='last_encoding', FH=1, FW=1, 
                                      weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
                               self.is_training, name='last_encoding_bn'))
-            
             #if self.drop_rate: return tf.nn.dropout(h, rate=self.drop_rate)
             #else: return h
             return tf.nn.dropout(h, keep_prob=1.0-self.drop_rate) # tf.nn.dropout(h, rate=self.drop_rate)
@@ -216,15 +207,12 @@ class ASPP:
             h4 = self.global_average_pooling_2d(inputs, H=H_encoded, W=W_encoded)
             
             h = tf.concat([h0, h1, h2, h3, h4], axis=-1)
-            
             h = tf.nn.relu(BN(conv2d(h, FN=256, name='last_encoding', FH=1, FW=1, 
                                      weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
                               self.is_training, name='last_encoding_bn'))
-            
             #if self.drop_rate: return tf.nn.dropout(h, rate=self.drop_rate)
             #else: return h
             return tf.nn.dropout(h, keep_prob=1.0-self.drop_rate) # tf.nn.dropout(h, rate=self.drop_rate)
-        
         
 class Decoder:
     """
@@ -247,7 +235,6 @@ class Decoder:
         self.weight_decay_lambda = weight_decay_lambda
         self.truncated = truncated 
         
-    
     def forward(self, c128_feature, inputs):
         """
         Parameters
@@ -284,7 +271,6 @@ class Decoder:
             h.append(tf.image.resize_bilinear(h[-1], size=[self.H, self.W], align_corners=True))
             return h[-1]
         
-            
         else:
             h = []
             h.append(tf.nn.relu(BN(conv2d(c128_feature, FN=48, name='decoder0', FH=1, FW=1, 
@@ -309,10 +295,8 @@ class Decoder:
             
             h.append(conv2d(h[-1], FN=self.num_class, name='last_conv', FH=1, FW=1, bias=True,
                             weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated))
-            
             h.append(tf.image.resize_bilinear(h[-1], size=[self.H, self.W], align_corners=True))
             return h[-1]
-        
         
 class DeepLabv3plus:
     """
@@ -348,16 +332,14 @@ class DeepLabv3plus:
         self.save_dir = save_dir
         self.gpu_num = gpu_num
         assert self.gpu_num < 3, 'If the number of gpus is larger than 2, allocate them mannually.'
-        
         np.random.seed(self.seed)
         tf.set_random_seed(self.seed)
         self.build_model()
 
-        
     def build_model(self):
         with tf.name_scope('placeholders'):
             with tf.name_scope('inputs'):
-                self.inputs = tf.placeholder(tf.float32, shape=(None, None, None, self.C_in), name='inputs') # arbitrary sized inputs
+                self.inputs = tf.placeholder(tf.float32, shape=(None, None, None, self.C_in), name='inputs')
 
             with tf.name_scope('ground_truths'):
                 self.gts = tf.placeholder(tf.float32, shape=(None, None, None, self.num_class), name='ground_truths')
@@ -437,15 +419,14 @@ class DeepLabv3plus:
                 
             with tf.name_scope('accuracy'):
                 with tf.name_scope('mIOU'):
-                    self.miou0 = miou_tf(pred=self.hardmax_de_aspp_x0, gt=self.gts) # a scalar # output_stride=16
-                    self.miou1 = miou_tf(pred=self.hardmax_de_aspp_x1, gt=self.gts) # a scalar # output_stride=8
+                    self.miou0 = miou_tf(pred=self.hardmax_de_aspp_x0, gt=self.gts) # a scalar, output_stride=16
+                    self.miou1 = miou_tf(pred=self.hardmax_de_aspp_x1, gt=self.gts) # a scalar, output_stride=8
                     
                 with tf.name_scope('percent_accuracy'):
                     self.PA_C0 = pixel_acc_4D_tf(pred=self.hardmax_de_aspp_x0, gt=self.gts, return_axis='C') # [C, 1] # output_stride=16
                     self.PA_C1 = pixel_acc_4D_tf(pred=self.hardmax_de_aspp_x1, gt=self.gts, return_axis='C') # [C, 1] # output_stride=8
                     self.PA_ALL0 = pixel_acc_4D_tf(pred=self.hardmax_de_aspp_x0, gt=self.gts, return_axis='ALL') # a scalar, output_stride=16
                     self.PA_ALL1 = pixel_acc_4D_tf(pred=self.hardmax_de_aspp_x1, gt=self.gts, return_axis='ALL') # a scalar, output_stride=8
-        
         
         tf.summary.image('Xception_entry_flow', tf.slice(c128_feature0, begin=[0, 0, 0, 0], 
                                                          size=[4, tf.cast(tf.ceil(self.H/4), tf.int32), tf.cast(tf.ceil(self.W/4), tf.int32), 1]),
@@ -479,10 +460,9 @@ class DeepLabv3plus:
         for biv in range(len(bias_var)):
             tf.summary.histogram('bias_var_%d' % biv, bias_var[biv])
     
-    
     def grid(self, H, W, H_, W_, random_pick=False, seed=0):
         """
-        return list of coordinates of top-left corner for random cropping
+        Returns list of coordinates of top-left corner for random cropping
         
         Parameters
         H, W: input image
@@ -493,17 +473,15 @@ class DeepLabv3plus:
         w = list(range(W - W_ + 1)) # list of possible top-left coordinate (width)
         grid = np.meshgrid(h, w)
         grid_list = [(i, j) for (i, j) in zip(grid[0].flatten(), grid[1].flatten())]
-        
         if not random_pick:
             return grid_list
         else:
             return grid_list[np.random.RandomState(seed=seed).choice(len(grid_list), 1)[0]] 
             # randomly pick one integer among 0~len(grid_list)-1 and return a tuple
-
             
     def random_brightness_contrast(self, tmp_data):
         """
-        this method can be ignored (in a segmentation task, this can lower the model performance).
+        This method can be ignored (in a segmentation task, this can lower the model performance).
         """
         tmp = []
         tmp.append(tf.image.random_brightness(tmp_data, max_delta=12.75/255)) # change max_delta manually
@@ -511,9 +489,9 @@ class DeepLabv3plus:
         tmp.append(tf.image.per_image_standardization(tmp[-1]))
         return tf.reshape(tmp[-1], [1, tf.shape(tmp_data)[0], tf.shape(tmp_data)[1], -1])
             
-            
     def train(self, inputs, gts, config): 
         """
+        Parameters
         inputs: a tuple consisting of (inputs_train, inputs_train_, inputs_valid) ([N, H, W, C_in])
         gts: a tuple consisting of (gts_train, gts_train_, gts_valid) ([N, H, W, num_class]) (0 or 1)
         config: configuration defined by tf.app.flags
@@ -524,7 +502,7 @@ class DeepLabv3plus:
         """     
         inputs_train, inputs_train_, inputs_valid = inputs # unpacking
         gts_train, gts_train_, gts_valid = gts
-        
+                
         H_orig, W_orig = inputs_train.shape[1], inputs_train.shape[2] # original image size
         H_train, W_train = config.H_train, config.W_train 
         # training size (fixed)
@@ -675,7 +653,6 @@ class DeepLabv3plus:
                 print('Epoch: %d, lr: %f, dt: (%f, %f), CEE_train: %f, miou_train: %f, PA_train: %f, CEE_valid: %f, miou_valid: %f, PA_valid: %f' % (epoch, 
                       lr_tmp, t2-t1, t4-t3, CEE_train_val, miou_train_val, PA_ALL_train_val, CEE_valid_val, miou_valid_val, PA_ALL_valid_val))
 
-                
     def evaluation(self, inputs, output_stride, gts=None): # at the validated epoch
         assert output_stride == 16 or output_stride == 8, 'output_stride should be either 16 or 8.'
         if output_stride == 16:
