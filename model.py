@@ -149,7 +149,7 @@ class ASPP:
         """
         if output_stride == 16: 
             d = [1, 6, 12, 18]
-            H_encoded = tf.cast(tf.ceil(self.H/16), tf.int32) # self.H is a placeholder i.e. tensor
+            H_encoded = tf.cast(tf.ceil(self.H/16), tf.int32)
             W_encoded = tf.cast(tf.ceil(self.W/16), tf.int32)
         
         elif output_stride == 8: 
