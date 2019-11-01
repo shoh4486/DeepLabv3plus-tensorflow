@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-@author: sio277(shoh4486@naver.com)
+@author: shoh4486
 tf.__version__ == '1.12.0' ~ '1.14.0'
 """
 import tensorflow as tf
