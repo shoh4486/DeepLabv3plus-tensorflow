@@ -46,8 +46,8 @@ FLAGS = flags.FLAGS
 
 pprint.pprint(flags.FLAGS.__flags)
 
-create_directory(FLAGS.save_dir)
-create_directory(os.path.join(FLAGS.save_dir, "test"))
+mkdir(FLAGS.save_dir)
+mkdir(os.path.join(FLAGS.save_dir, "test"))
 
 run_config = tf.ConfigProto()
 run_config.gpu_options.allow_growth = True
