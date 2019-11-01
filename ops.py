@@ -86,7 +86,7 @@ def BN(inputs, is_training, name='batch_norm', momentum=0.99, center=True):
     with tf.variable_scope(name):
         return tf.layers.batch_normalization(inputs, momentum=momentum, epsilon=1e-5, center=center, training=is_training) 
     
-def conv2d(inputs, FN, name='conv2d', FH=4, FW=4, sdy=1, sdx=1, padding='SAME', bias=True,
+def conv2d(inputs, FN, name='conv2d', FH=3, FW=3, sdy=1, sdx=1, padding='SAME', bias=False,
            weight_decay_lambda=None, truncated=False, stddev=0.02):
     """
     (standard) 2-D convolution
