@@ -305,12 +305,11 @@ class DeepLabv3plus:
 
     - Only Xception applied as a backbone structure of the encoder (no DeepLabv3 as the backbone).
     """
-    def __init__(self, sess, C_in, num_class, separable_aspp_decoder, seed, weight_decay_lambda=None, truncated=False, optimizer='Adam',
+    def __init__(self, sess, num_class, separable_aspp_decoder, seed, weight_decay_lambda=None, truncated=False, optimizer='Adam',
                  save_dir="./", gpu_num=2):
         """
         Parameters
         sess: TensorFlow sesson
-        C_in: input channel number
         num_class: the number of segmentation classes
         separable_aspp_decoder: if True, separable conv. is applied to both aspp and decoder modules.
         seed: random seed for random modules in numpy and TensorFlow
@@ -321,7 +320,6 @@ class DeepLabv3plus:
         gpu_num: the number of gpus
         """
         self.sess = sess
-        self.C_in = C_in
         self.num_class = num_class       
         self.separable_aspp_decoder = separable_aspp_decoder
         self.seed = seed
@@ -339,7 +337,7 @@ class DeepLabv3plus:
     def build_model(self):
         with tf.name_scope('placeholders'):
             with tf.name_scope('inputs'):
-                self.inputs = tf.placeholder(tf.float32, shape=(None, None, None, self.C_in), name='inputs')
+                self.inputs = tf.placeholder(tf.float32, shape=(None, None, None, None), name='inputs')
 
             with tf.name_scope('ground_truths'):
                 self.gts = tf.placeholder(tf.float32, shape=(None, None, None, self.num_class), name='ground_truths')
@@ -543,10 +541,10 @@ class DeepLabv3plus:
         total_train_num = int(inputs_train.shape[0]*config.n_aug)
         iters_per_epoch = int(total_train_num/config.batch_size_training)
         
-        tmp_data = tf.placeholder(tf.float32, shape=[1, None, None, None]) # one by one
+        tmp_data = tf.placeholder(tf.float32, shape=(1, None, None, None)) # one by one
         tmp_nn = tf.image.resize_images(tmp_data, size=[H_train, W_train], method=tf.image.ResizeMethod.NEAREST_NEIGHBOR, 
                                         align_corners=True, preserve_aspect_ratio=True)
-        tmp_data2 = tf.placeholder(tf.float32, shape=[H_train, W_train, None]) # one by one
+        tmp_data2 = tf.placeholder(tf.float32, shape=(H_train, W_train, None)) # one by one
         tmp_random = self.random_brightness_contrast(tmp_data2)
         
         ######################################## list1, len: total_train_num

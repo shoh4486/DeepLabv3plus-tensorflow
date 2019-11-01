@@ -13,7 +13,6 @@ from utils import *
 trial_num = 1
 
 flags = tf.app.flags
-flags.DEFINE_integer('in_channel', 3, 'input channel dimension')
 flags.DEFINE_integer('num_class', 4, 'the number of classes')
 flags.DEFINE_bool('separable', True, 'applying separable convoluion')
 flags.DEFINE_integer('seed', 1, 'seed number')
@@ -55,7 +54,6 @@ sess = tf.Session(config=run_config)
 
 deeplabv3plus = DeepLabv3plus(
                               sess=sess,
-                              C_in=FLAGS.in_channel,
                               num_class=FLAGS.num_class,
                               separable_aspp_decoder=FLAGS.separable,
                               seed=FLAGS.seed,
