@@ -6,5 +6,6 @@
 ## In this code
 - DeepLabv3+ == Modified aligned Xception + ASPP + U-Net style decoder
 - In a training phase, random cropping and random scaling were employed and then resized to the fixed training image size.
+- tf.\_\_version\_\_ == '1.12.0' ~ '1.14.0'
 ## Author
 Sehyeok Oh @sio277
