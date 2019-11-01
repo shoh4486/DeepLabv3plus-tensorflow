@@ -114,7 +114,7 @@ class ASPP:
         Parameters
         H, W: training image size
         seperable: if True, ASSPP, else, ASPP.
-        drop_rate: the probability that each element of x is discarded. To off the dropout, set to None. It should be set by a placeholder (0.0 in the test phase).
+        drop_rate: the probability that each element of x is discarded. It should be set by a placeholder (0.0 in the test phase).
         """
         self.H, self.W = H, W
         self.is_training = is_training
@@ -225,7 +225,7 @@ class Decoder:
         H, W: training image size
         num_class: the number of segmentation classes
         seperable: if True, seperable conv. will be applied.
-        drop_rate: the probability that each element of x is discarded. To off the dropout, set to None. It should be set by a placeholder (0.0 in the test phase).
+        drop_rate: the probability that each element of x is discarded. It should be set by a placeholder (0.0 in the test phase).
         """
         self.H, self.W = H, W
         self.num_class = num_class
@@ -351,9 +351,9 @@ class DeepLabv3plus:
                 self.is_training = tf.placeholder(tf.bool, shape=None, name='is_training')
 
             with tf.name_scope('drop_rates'): # The probability that each element of x is discarded.
-                self.drop_rate0 = tf.placeholder(tf.float32, shape=None, name='drop_rate0') 
-                self.drop_rate1 = tf.placeholder(tf.float32, shape=None, name='drop_rate1')
-                self.drop_rate2 = tf.placeholder(tf.float32, shape=None, name='drop_rate2')
+                self.drop_rate0 = tf.placeholder(tf.float32, shape=None, name='drop_rate0') # -> ASPP
+                self.drop_rate1 = tf.placeholder(tf.float32, shape=None, name='drop_rate1') # -> Decoder
+                self.drop_rate2 = tf.placeholder(tf.float32, shape=None, name='drop_rate2') # -> Decoder
 
             with tf.name_scope('learning_rate'):
                 self.lr = tf.placeholder(tf.float32, shape=None, name='learning_rate')
