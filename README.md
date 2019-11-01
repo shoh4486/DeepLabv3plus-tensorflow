@@ -5,5 +5,6 @@
 - CNN-based encoder-decoder with atrous separable convolution
 ## In this code
 - DeepLabv3+ == Modified aligned Xception + ASPP + U-Net style decoder
+- In a training phase, random cropping and random scaling were employed and then resized to the fixed training image size.
 ## Author
 Sehyeok Oh @sio277
