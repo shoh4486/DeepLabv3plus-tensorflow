@@ -5,12 +5,12 @@
 import os
 import tensorflow as tf
 
-def create_directory(directory):
+def mkdir(directory):
     try:
         if not os.path.exists(directory):
             os.makedirs(directory)     
     except OSError:
-        print('Error: Creating directory. ' + directory)
+        raise OSError('Cannot make the directory "{0}"'.format(directory))
 
 def global_variables_list():
     return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
