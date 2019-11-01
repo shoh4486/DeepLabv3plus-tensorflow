@@ -48,9 +48,12 @@ pprint.pprint(flags.FLAGS.__flags)
 mkdir(FLAGS.save_dir)
 mkdir(os.path.join(FLAGS.save_dir, "test"))
 
-run_config = tf.ConfigProto()
-run_config.gpu_options.allow_growth = True
-sess = tf.Session(config=run_config)
+if FLAGS.gpu_num: # gpu_num >= 1
+    run_config = tf.ConfigProto()
+    run_config.gpu_options.allow_growth = True
+    sess = tf.Session(config=run_config)
+else: # only cpu
+    sess = tf.Session()
 
 deeplabv3plus = DeepLabv3plus(
                               sess=sess,
