@@ -111,12 +111,13 @@ if FLAGS.train:
     
 else: # testing mode
     try:
-        from data.test_data_preprocessing import inputs_test, gts_test
-        inputs_pixel_checker(inputs_test)
-        gts_pixel_checker(set(gts_test.flatten()))
-            
+        from data.test_data_preprocessing import inputs_test, gts_test  
     except ImportError: # when gts_test is not given
         from data.test_data_preprocessing import inputs_test
+    else:
+        gts_pixel_checker(set(gts_test.flatten()))
+    finally:
+        inputs_pixel_checker(inputs_test)
     
     if FLAGS.restore:
         saver = tf.train.Saver()
