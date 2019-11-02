@@ -181,7 +181,7 @@ def sep_conv2d(inputs, FN, name, FH=3, FW=3, CM=1, sdy=1, sdx=1, padding='SAME',
             w2 = tf.get_variable(name='pointwise_weight', shape=[1, 1, int(C*CM), FN], dtype=tf.float32, initializer=initializer,
                                  regularizer=tf.contrib.layers.l2_regularizer(scale=weight_decay_lambda))
         h = []
-        if rate == None:
+        if rate is None:
             h.append(tf.nn.depthwise_conv2d(inputs, w1, strides=[1, sdy, sdx, 1], padding=padding, rate=rate))
             # depthwise convolution (no atrous)
         elif rate == 1:
@@ -220,7 +220,7 @@ def block(inputs, FN1, FN2, FN3, name, first_relu=True, downsampling=False, rate
            If None, no atrous convolution.
     """
     with tf.variable_scope(name):
-        if rates == None:
+        if rates is None:
             rates = [None, None, None]
 
         h = [inputs]
