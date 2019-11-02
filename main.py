@@ -71,11 +71,13 @@ global_variables_list()
 
 if FLAGS.train:
     from data.data_preprocessing import inputs_train, inputs_train_, inputs_valid, gts_train, gts_train_, gts_valid
-    # inputs, gts: shape [N, H, W, C]
-    # gts must be either 0 or 1 (segmented image; class axis: channel axis)
+    data_col = [inputs_train, inputs_train_, inputs_valid]
+    for i in data_col:
+        inputs_pixel_checker(i)
+        
     set_gts = [set(gts_train.flatten()), set(gts_train_.flatten()), set(gts_train.flatten())]
     for i in set_gts:
-        pixel_checker(i)
+        gts_pixel_checker(i)
     
     if FLAGS.restore:
         saver = tf.train.Saver()
@@ -110,7 +112,8 @@ if FLAGS.train:
 else: # testing mode
     try:
         from data.test_data_preprocessing import inputs_test, gts_test
-        pixel_checker(set(gts_test.flatten()))
+        inputs_pixel_checker(inputs_test)
+        gts_pixel_checker(set(gts_test.flatten()))
             
     except ImportError: # when gts_test is not given
         from data.test_data_preprocessing import inputs_test

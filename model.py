@@ -26,6 +26,7 @@ class Xception:
         h.append(tf.nn.relu(BN(conv2d(inputs, FN=32, name='entry0', sdy=2, sdx=2, 
                                       weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
                                self.is_training, name='entry0_bn')))
+    
         h.append(tf.nn.relu(BN(conv2d(h[-1], FN=64, name='entry1', 
                                       weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
                                self.is_training, name='entry1_bn')))
@@ -295,6 +296,7 @@ class Decoder:
             
             h.append(conv2d(h[-1], FN=self.num_class, name='last_conv', FH=1, FW=1, bias=True,
                             weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated))
+            
             h.append(tf.image.resize_bilinear(h[-1], size=[self.H, self.W], align_corners=True))
             return h[-1]
         
@@ -490,7 +492,7 @@ class DeepLabv3plus:
     def train(self, inputs, gts, config): 
         """
         Parameters
-        inputs: a tuple consisting of (inputs_train, inputs_train_, inputs_valid) ([N, H, W, C_in])
+        inputs: a tuple consisting of (inputs_train, inputs_train_, inputs_valid) ([N, H, W, C]) (0~1)
         gts: a tuple consisting of (gts_train, gts_train_, gts_valid) ([N, H, W, num_class]) (0 or 1)
         config: configuration defined by tf.app.flags
         
@@ -651,7 +653,15 @@ class DeepLabv3plus:
                 print('Epoch: %d, lr: %f, dt: (%f, %f), CEE_train: %f, miou_train: %f, PA_train: %f, CEE_valid: %f, miou_valid: %f, PA_valid: %f' % (epoch, 
                       lr_tmp, t2-t1, t4-t3, CEE_train_val, miou_train_val, PA_ALL_train_val, CEE_valid_val, miou_valid_val, PA_ALL_valid_val))
 
-    def evaluation(self, inputs, output_stride, gts=None): # at the validated epoch
+    def evaluation(self, inputs, output_stride, gts=None):
+        """
+        Test set evaluation after the training and the validation
+        
+        Parameters
+        inputs: input images ([N, H, W, C]) (0~1)
+        output_stride: (int) 16 or 8
+        gts: (optional) ground truths ([N, H, W, num_class]) (0 or 1)
+        """
         assert output_stride == 16 or output_stride == 8, 'output_stride should be either 16 or 8.'
         if output_stride == 16:
             if np.sum(gts == None):
