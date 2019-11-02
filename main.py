@@ -75,7 +75,7 @@ if FLAGS.train:
     for i in data_col:
         inputs_pixel_checker(i)
         
-    set_gts = [set(gts_train.flatten()), set(gts_train_.flatten()), set(gts_train.flatten())]
+    set_gts = [set(gts_train.flatten()), set(gts_train_.flatten()), set(gts_valid.flatten())]
     for i in set_gts:
         gts_pixel_checker(i)
     
