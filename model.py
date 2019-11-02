@@ -664,7 +664,7 @@ class DeepLabv3plus:
         """
         assert output_stride == 16 or output_stride == 8, 'output_stride should be either 16 or 8.'
         if output_stride == 16:
-            if np.sum(gts == None):
+            if np.sum(gts is None):
                 return self.sess.run(self.hardmax_de_aspp_x0, 
                                      feed_dict={self.inputs: inputs,
                                                 self.H: inputs.shape[1], self.W: inputs.shape[2],
@@ -679,7 +679,7 @@ class DeepLabv3plus:
                                                 self.drop_rate0: 0.0, self.drop_rate1: 0.0, self.drop_rate2: 0.0})
         
         elif output_stride == 8:
-            if np.sum(gts == None):
+            if np.sum(gts is None):
                 return self.sess.run(self.hardmax_de_aspp_x1, 
                                      feed_dict={self.inputs: inputs,
                                                 self.H: inputs.shape[1], self.W: inputs.shape[2],
