@@ -24,6 +24,7 @@ def inputs_pixel_checker(image):
         
 def gts_pixel_checker(image_set):
     """
+    Parameters
     image_set: set(image)
     """
     if (0 in image_set) and (1 in image_set) and (len(image_set) == 2):
