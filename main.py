@@ -134,11 +134,11 @@ else: # testing mode
             np.savetxt(os.path.join(FLAGS.save_dir, "test", "PA_ALL_test.txt"), PA_ALL_test)
         
         else:
-            test_results = deeplabv3plus.evaluation(
-                                                    inputs=inputs_test,
-                                                    output_stride=FLAGS.output_stride_testing,
-                                                    gts=None
-                                                    )
+            seg_test = deeplabv3plus.evaluation(
+                                                inputs=inputs_test,
+                                                output_stride=FLAGS.output_stride_testing,
+                                                gts=None
+                                                )
         for i in range(len(seg_test)):
             for c in range(FLAGS.num_class):
                 np.savetxt(os.path.join(FLAGS.save_dir, "test", "test_result%d_class%d.txt" % (i, c)), seg_test[i, :, :, c])
