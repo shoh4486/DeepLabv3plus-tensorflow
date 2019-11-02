@@ -15,3 +15,4 @@
 Sehyeok Oh @shoh4486
 ## Author's application
 - Semantic segmentation of self-piercing riveting (SPR) optical microscopic images (mIOU: 98.49%).
+- (paper submitted)
