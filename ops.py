@@ -266,9 +266,9 @@ class Block:
         """
         Parameters
         inputs: [N, H, W, C]
-        FN%d: (int) output channel number (filter number) in each inner conv.
+        FN%d: (int) output channel number (filter number) in each inner conv
         downsampling: (bool) whether reduction in spatial dimensions ([H, W]) is on.
-        rates: (int) dilation rates in three different seperable convs., shape: [r1, r2, r3] (assume r1=rH1=rW1, r2=rH2=rW2, r3=rH3=rW3).
+        rates: (int) dilation rates in three different seperable convs., shape: [r1, r2, r3] (assume r1=rH1=rW1, r2=rH2=rW2, r3=rH3=rW3)
                If None, no atrous convolution.
         """
         with tf.variable_scope(name):
