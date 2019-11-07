@@ -68,7 +68,7 @@ deeplabv3plus = DeepLabv3plus(
                               save_dir=FLAGS.save_dir,
                               gpu_num=FLAGS.gpu_num
                               )
-"""
+
 global_variables_list()
 
 if FLAGS.train:
@@ -146,4 +146,3 @@ else: # testing mode
                 np.savetxt(os.path.join(FLAGS.save_dir, "test", "test_result%d_class%d.txt" % (i, c)), seg_test[i, :, :, c])
     else:
         raise NotImplementedError('pretrained session must be restored.')
-"""
