@@ -13,6 +13,7 @@ from utils import *
 trial_num = 1
 
 flags = tf.app.flags
+flags.DEFINE_integer('C_in', 3, 'the number of input channels')
 flags.DEFINE_integer('num_class', 4, 'the number of classes')
 flags.DEFINE_bool('separable', True, 'applying separable convoluion')
 flags.DEFINE_integer('seed', 1, 'seed number')
@@ -57,6 +58,7 @@ else: # only cpu
 
 deeplabv3plus = DeepLabv3plus(
                               sess=sess,
+                              C_in=FLAGS.C_in,
                               num_class=FLAGS.num_class,
                               separable_aspp_decoder=FLAGS.separable,
                               seed=FLAGS.seed,
@@ -66,7 +68,7 @@ deeplabv3plus = DeepLabv3plus(
                               save_dir=FLAGS.save_dir,
                               gpu_num=FLAGS.gpu_num
                               )
-
+"""
 global_variables_list()
 
 if FLAGS.train:
@@ -144,3 +146,4 @@ else: # testing mode
                 np.savetxt(os.path.join(FLAGS.save_dir, "test", "test_result%d_class%d.txt" % (i, c)), seg_test[i, :, :, c])
     else:
         raise NotImplementedError('pretrained session must be restored.')
+"""

@@ -17,32 +17,29 @@ class Xception:
         self.is_training = is_training
         self.weight_decay_lambda = weight_decay_lambda
         self.truncated = truncated
+        self.conv2d = Conv2D(3, 3, self.weight_decay_lambda, self.truncated, 0.02)
+        self.bn = BN()
+        self.block = Block(self.weight_decay_lambda, self.truncated, 0.02)
+        self.sepconv2d = SepConv2D(3, 3, 1, self.weight_decay_lambda, self.truncated, 0.02)
         
     def entry_flow(self, inputs, downsampling):
         """
         Entry flow
         """
         h = []
-        h.append(tf.nn.relu(BN(conv2d(inputs, FN=32, name='entry0', sdy=2, sdx=2, 
-                                      weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                               self.is_training, name='entry0_bn')))
+        h.append(tf.nn.relu(self.bn(self.conv2d(inputs, 32, 2, 'entry0'), self.is_training, 'entry0_bn')))
     
-        h.append(tf.nn.relu(BN(conv2d(h[-1], FN=64, name='entry1', 
-                                      weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                               self.is_training, name='entry1_bn')))
+        h.append(tf.nn.relu(self.bn(self.conv2d(h[-1], 64, 1, 'entry1'), self.is_training, 'entry1_bn')))
         
-        h.append(block(h[-1], 128, 128, 128, name='entry_block0', first_relu=False, downsampling=True, 
-                       is_training=self.is_training,
-                       weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated))
+        h.append(self.block(h[-1], 128, 128, 128, first_relu=False, downsampling=True, 
+                            is_training=self.is_training, name='entry_block0'))
         c128_feature = tf.nn.relu(h[-1])
         
-        h.append(block(h[-1], 256, 256, 256, name='entry_block1', downsampling=True, 
-                       is_training=self.is_training,
-                       weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated))
+        h.append(self.block(h[-1], 256, 256, 256, downsampling=True, 
+                            is_training=self.is_training, name='entry_block1'))
 
-        h.append(block(h[-1], 728, 728, 728, name='entry_block2', downsampling=downsampling, 
-                       is_training=self.is_training,
-                       weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated))
+        h.append(self.block(h[-1], 728, 728, 728, downsampling=downsampling, 
+                            is_training=self.is_training, name='entry_block2'))
         return c128_feature, h[-1]  
     
     def middle_flow(self, inputs, md):
@@ -54,9 +51,8 @@ class Xception:
         """
         h = [inputs]
         for _ in range(16):
-            h.append(block(h[-1], 728, 728, 728, name='middle_block%d' % (len(h)-1), rates=md, 
-                           is_training=self.is_training, is_res_conv=False,
-                           weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated))
+            h.append(self.block(h[-1], 728, 728, 728, rates=md, 
+                                is_training=self.is_training, is_res_conv=False, name='middle_block%d' % (len(h)-1)))
         return h[-1]
 
     def exit_flow(self, inputs, ed):
@@ -67,24 +63,17 @@ class Xception:
         inputs: middle_flow's return
         """
         h = [inputs]
-        h.append(block(h[-1], 728, 1024, 1024, name='exit_block0', rates=[ed[0], ed[0], None],
-                       is_training=self.is_training,
-                       weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated))
+        h.append(self.block(h[-1], 728, 1024, 1024, rates=[ed[0], ed[0], None],
+                            is_training=self.is_training, name='exit_block0'))
         
-        h.append(BN(sep_conv2d(tf.nn.relu(h[-1]), FN=1536, name='exit0', rate=ed[1],
-                               is_training=self.is_training,
-                               weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                    self.is_training, name='exit0_bn'))
+        h.append(self.bn(self.sepconv2d(tf.nn.relu(h[-1]), 1536, 1, rate=ed[1], is_training=self.is_training, name='exit0'), 
+                         self.is_training, 'exit0_bn'))
         
-        h.append(BN(sep_conv2d(tf.nn.relu(h[-1]), FN=1536, name='exit1', rate=ed[1],
-                               is_training=self.is_training,
-                               weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                    self.is_training, name='exit1_bn'))
+        h.append(self.bn(self.sepconv2d(tf.nn.relu(h[-1]), 1536, 1, rate=ed[1], is_training=self.is_training, name='exit1'), 
+                         self.is_training, 'exit1_bn'))
         
-        h.append(BN(sep_conv2d(tf.nn.relu(h[-1]), FN=2048, name='exit2', rate=ed[1],
-                               is_training=self.is_training,
-                               weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                    self.is_training, name='exit2_bn'))
+        h.append(self.bn(self.sepconv2d(tf.nn.relu(h[-1]), 2048, 1, rate=ed[1], is_training=self.is_training, name='exit2'), 
+                         self.is_training, 'exit2_bn'))
 
         h.append(tf.nn.relu(h[-1]))
         return h[-1]
@@ -122,7 +111,13 @@ class ASPP:
         self.separable = separable
         self.drop_rate = drop_rate
         self.weight_decay_lambda = weight_decay_lambda
-        self.truncated = truncated 
+        self.truncated = truncated       
+        self.conv2d = Conv2D(1, 1, self.weight_decay_lambda, self.truncated, 0.02)
+        self.bn = BN()
+        self.block = Block(self.weight_decay_lambda, self.truncated, 0.02)
+        self.sepconv2d = SepConv2D(3, 3, 1, self.weight_decay_lambda, self.truncated, 0.02)
+        self.aconv2d0 = AConv2D(1, 1, self.weight_decay_lambda, self.truncated, 0.02)
+        self.aconv2d1 = AConv2D(3, 3, self.weight_decay_lambda, self.truncated, 0.02)
 
     def global_average_pooling_2d(self, inputs, H, W):
         """
@@ -136,9 +131,8 @@ class ASPP:
         # global average pooling 2-D
         h.append(tf.reduce_mean(inputs, axis=[1, 2], keepdims=True)) 
         # 1x1 conv.
-        h.append(tf.nn.relu(BN(conv2d(h[-1], FN=256, name='global_average_pooling_2d', FH=1, FW=1, 
-                                      weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                               self.is_training, name='global_average_pooling_2d_bn')))
+        h.append(tf.nn.relu(self.bn(self.conv2d(h[-1], 256, 1, 'global_average_pooling_2d'), 
+                                    self.is_training, 'global_average_pooling_2d_bn')))
         # bilinear upsampling
         h.append(tf.image.resize_bilinear(h[-1], size=[H, W], align_corners=True))
         return h[-1] 
@@ -159,58 +153,45 @@ class ASPP:
             W_encoded = tf.cast(tf.ceil(self.W/8), tf.int32)
             
         if self.separable: # ASSPP
-            h0 = tf.nn.relu(BN(atrous_conv2d(inputs, FN=256, name='aspp0', rate=d[0], FH=1, FW=1, 
-                                             weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                               self.is_training, name='aspp0_bn'))
+            h0 = tf.nn.relu(self.bn(self.aconv2d0(inputs, 256, rate=d[0], name='aspp0'), 
+                                    self.is_training, 'aspp0_bn'))
             
-            h1 = tf.nn.relu(BN(sep_conv2d(inputs, FN=256, name='aspp1', rate=d[1],
-                                          is_training=self.is_training,
-                                          weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                               self.is_training, name='aspp1_bn'))
+            h1 = tf.nn.relu(self.bn(self.sepconv2d(inputs, 256, 1, rate=d[1], is_training=self.is_training, name='aspp1'), 
+                                    self.is_training, 'aspp1_bn'))
             
-            h2 = tf.nn.relu(BN(sep_conv2d(inputs, FN=256, name='aspp2', rate=d[2],
-                                          is_training=self.is_training,
-                                          weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                               self.is_training, name='aspp2_bn'))
+            h2 = tf.nn.relu(self.bn(self.sepconv2d(inputs, 256, 1, rate=d[2], is_training=self.is_training, name='aspp2'), 
+                                    self.is_training, 'aspp2_bn'))
             
-            h3 = tf.nn.relu(BN(sep_conv2d(inputs, FN=256, name='aspp3', rate=d[3],
-                                          is_training=self.is_training,
-                                          weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                               self.is_training, name='aspp3_bn'))
+            h3 = tf.nn.relu(self.bn(self.sepconv2d(inputs, 256, 1, rate=d[3], is_training=self.is_training, name='aspp3'), 
+                                    self.is_training, 'aspp3_bn'))
             
             h4 = self.global_average_pooling_2d(inputs, H=H_encoded, W=W_encoded)
             
             h = tf.concat([h0, h1, h2, h3, h4], axis=-1) 
-            h = tf.nn.relu(BN(conv2d(h, FN=256, name='last_encoding', FH=1, FW=1, 
-                                     weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                              self.is_training, name='last_encoding_bn'))
+            h = tf.nn.relu(self.bn(self.conv2d(h, 256, 1, 'last_encoding'), 
+                                   self.is_training, 'last_encoding_bn'))
             #if self.drop_rate: return tf.nn.dropout(h, rate=self.drop_rate)
             #else: return h
             return tf.nn.dropout(h, keep_prob=1.0-self.drop_rate) # tf.nn.dropout(h, rate=self.drop_rate)
             
         else: # ASPP
-            h0 = tf.nn.relu(BN(atrous_conv2d(inputs, FN=256, name='aspp0', rate=d[0], FH=1, FW=1, 
-                                             weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                               self.is_training, name='aspp0_bn'))
+            h0 = tf.nn.relu(self.bn(self.aconv2d0(inputs, 256, rate=d[0], name='aspp0'), 
+                                    self.is_training, 'aspp0_bn'))
             
-            h1 = tf.nn.relu(BN(atrous_conv2d(inputs, FN=256, name='aspp1', rate=d[1], 
-                                             weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                               self.is_training, name='aspp1_bn'))
+            h1 = tf.nn.relu(self.bn(self.aconv2d1(inputs, 256, rate=d[1], name='aspp1'), 
+                                    self.is_training, 'aspp1_bn'))
             
-            h2 = tf.nn.relu(BN(atrous_conv2d(inputs, FN=256, name='aspp2', rate=d[2], 
-                                             weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                               self.is_training, name='aspp2_bn'))
+            h2 = tf.nn.relu(self.bn(self.aconv2d1(inputs, 256, rate=d[2], name='aspp2'), 
+                                    self.is_training, 'aspp2_bn'))
             
-            h3 = tf.nn.relu(BN(atrous_conv2d(inputs, FN=256, name='aspp3', rate=d[3], 
-                                             weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                               self.is_training, name='aspp3_bn'))
+            h3 = tf.nn.relu(self.bn(self.aconv2d1(inputs, 256, rate=d[3], name='aspp3'), 
+                                    self.is_training, 'aspp3_bn'))
             
             h4 = self.global_average_pooling_2d(inputs, H=H_encoded, W=W_encoded)
             
             h = tf.concat([h0, h1, h2, h3, h4], axis=-1)
-            h = tf.nn.relu(BN(conv2d(h, FN=256, name='last_encoding', FH=1, FW=1, 
-                                     weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                              self.is_training, name='last_encoding_bn'))
+            h = tf.nn.relu(self.bn(self.conv2d(h, 256, 1, 'last_encoding'), 
+                                   self.is_training, 'last_encoding_bn'))
             #if self.drop_rate: return tf.nn.dropout(h, rate=self.drop_rate)
             #else: return h
             return tf.nn.dropout(h, keep_prob=1.0-self.drop_rate) # tf.nn.dropout(h, rate=self.drop_rate)
@@ -234,7 +215,11 @@ class Decoder:
         self.separable = separable
         self.drop_rate1, self.drop_rate2 = drop_rate1, drop_rate2
         self.weight_decay_lambda = weight_decay_lambda
-        self.truncated = truncated 
+        self.truncated = truncated
+        self.conv2d0 = Conv2D(1, 1, self.weight_decay_lambda, self.truncated, 0.02)
+        self.conv2d1 = Conv2D(3, 3, self.weight_decay_lambda, self.truncated, 0.02)
+        self.bn = BN()
+        self.sepconv2d = SepConv2D(3, 3, 1, self.weight_decay_lambda, self.truncated, 0.02)
         
     def forward(self, c128_feature, inputs):
         """
@@ -244,58 +229,48 @@ class Decoder:
         """
         if self.separable:
             h = []
-            h.append(tf.nn.relu(BN(conv2d(c128_feature, FN=48, name='decoder0', FH=1, FW=1, 
-                                          weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                                   self.is_training, name='decoder0_bn')))
+            h.append(tf.nn.relu(self.bn(self.conv2d0(c128_feature, 48, 1, 'decoder0'), 
+                                        self.is_training, 'decoder0_bn')))
             
             h.append(tf.image.resize_bilinear(inputs, size=[tf.cast(tf.ceil(self.H/4), tf.int32), tf.cast(tf.ceil(self.W/4), tf.int32)], 
                                               align_corners=True))
             h.append(tf.concat([h[-2], h[-1]], axis=-1))
             
-            h.append(tf.nn.relu(BN(sep_conv2d(h[-1], FN=256, name='decoder1',
-                                              is_training=self.is_training,
-                                              weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                                   self.is_training, name='decoder1_bn')))
+            h.append(tf.nn.relu(self.bn(self.sepconv2d(h[-1], 256, 1, is_training=self.is_training, name='decoder1'), 
+                                        self.is_training, 'decoder1_bn')))
             #h.append(tf.nn.dropout(h[-1], drop_rate=self.drop_rate1))
             h.append(tf.nn.dropout(h[-1], keep_prob=1.0-self.drop_rate1))
             
-            h.append(tf.nn.relu(BN(sep_conv2d(h[-1], FN=256, name='decoder2',
-                                              is_training=self.is_training,
-                                              weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                                   self.is_training, name='decoder2_bn')))
+            h.append(tf.nn.relu(self.bn(self.sepconv2d(h[-1], 256, 1, is_training=self.is_training, name='decoder2'), 
+                                        self.is_training, 'decoder2_bn')))
             #h.append(tf.nn.dropout(h[-1], drop_rate=self.drop_rate2))
             h.append(tf.nn.dropout(h[-1], keep_prob=1.0-self.drop_rate2))
             
-            h.append(conv2d(h[-1], FN=self.num_class, name='last_conv', FH=1, FW=1, bias=True,
-                            weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated))
+            h.append(self.conv2d0(h[-1], self.num_class, 1, 'last_conv', bias=True))
             
             h.append(tf.image.resize_bilinear(h[-1], size=[self.H, self.W], align_corners=True))
             return h[-1]
         
         else:
             h = []
-            h.append(tf.nn.relu(BN(conv2d(c128_feature, FN=48, name='decoder0', FH=1, FW=1, 
-                                          weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                                   self.is_training, name='decoder0_bn')))
+            h.append(tf.nn.relu(self.bn(self.conv2d0(c128_feature, 48, 1, 'decoder0'), 
+                                        self.is_training, 'decoder0_bn')))
             
             h.append(tf.image.resize_bilinear(inputs, size=[tf.cast(tf.ceil(self.H/4), tf.int32), tf.cast(tf.ceil(self.W/4), tf.int32)], 
                                               align_corners=True))
             h.append(tf.concat([h[-2], h[-1]], axis=-1))
             
-            h.append(tf.nn.relu(BN(conv2d(h[-1], FN=256, name='decoder1', 
-                                          weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                                   self.is_training, name='decoder1_bn')))
+            h.append(tf.nn.relu(self.bn(self.conv2d1(h[-1], 256, 1, 'decoder1'), 
+                                        self.is_training, 'decoder1_bn')))
             #h.append(tf.nn.dropout(h[-1], drop_rate=self.drop_rate1))
             h.append(tf.nn.dropout(h[-1], keep_prob=1.0-self.drop_rate1))
             
-            h.append(tf.nn.relu(BN(conv2d(h[-1], FN=256, name='decoder2', 
-                                          weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated), 
-                                   self.is_training, name='decoder2_bn')))
+            h.append(tf.nn.relu(self.bn(self.conv2d1(h[-1], 256, 1, 'decoder2'), 
+                                        self.is_training, 'decoder2_bn')))
             #h.append(tf.nn.dropout(h[-1], drop_rate=self.drop_rate2))
             h.append(tf.nn.dropout(h[-1], keep_prob=1.0-self.drop_rate2))
             
-            h.append(conv2d(h[-1], FN=self.num_class, name='last_conv', FH=1, FW=1, bias=True,
-                            weight_decay_lambda=self.weight_decay_lambda, truncated=self.truncated))
+            h.append(self.conv2d0(h[-1], self.num_class, 1, 'last_conv', bias=True))
             
             h.append(tf.image.resize_bilinear(h[-1], size=[self.H, self.W], align_corners=True))
             return h[-1]
@@ -307,11 +282,12 @@ class DeepLabv3plus:
 
     - Only Xception applied as a backbone structure of the encoder (no DeepLabv3 as the backbone).
     """
-    def __init__(self, sess, num_class, separable_aspp_decoder, seed, weight_decay_lambda=None, truncated=False, optimizer='Adam',
+    def __init__(self, sess, C_in, num_class, separable_aspp_decoder, seed, weight_decay_lambda=None, truncated=False, optimizer='Adam',
                  save_dir="./", gpu_num=2):
         """
         Parameters
         sess: TensorFlow sesson
+        C_in: the number of input channels
         num_class: the number of segmentation classes
         separable_aspp_decoder: if True, separable conv. is applied to both aspp and decoder modules.
         seed: random seed for random modules in numpy and TensorFlow
@@ -322,6 +298,7 @@ class DeepLabv3plus:
         gpu_num: the number of gpus
         """
         self.sess = sess
+        self.C_in = C_in
         self.num_class = num_class       
         self.separable_aspp_decoder = separable_aspp_decoder
         self.seed = seed
@@ -339,7 +316,7 @@ class DeepLabv3plus:
     def build_model(self):
         with tf.name_scope('placeholders'):
             with tf.name_scope('inputs'):
-                self.inputs = tf.placeholder(tf.float32, shape=(None, None, None, None), name='inputs')
+                self.inputs = tf.placeholder(tf.float32, shape=(None, None, None, self.C_in), name='inputs')
 
             with tf.name_scope('ground_truths'):
                 self.gts = tf.placeholder(tf.float32, shape=(None, None, None, self.num_class), name='ground_truths')
@@ -407,8 +384,10 @@ class DeepLabv3plus:
             update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
             with tf.control_dependencies(update_ops):
                 if self.optimizer == 'Adam':
-                    self.train_step0 = tf.train.AdamOptimizer(learning_rate=self.lr, beta1=self._beta1).minimize(softmax_cee0) # output_stride=16       
-                    self.train_step1 = tf.train.AdamOptimizer(learning_rate=self.lr, beta1=self._beta1).minimize(softmax_cee1) # output_stride=8
+                    self.train_step0 = tf.train.AdamOptimizer(learning_rate=self.lr, 
+                                                              beta1=self._beta1).minimize(softmax_cee0) # output_stride=16       
+                    self.train_step1 = tf.train.AdamOptimizer(learning_rate=self.lr, 
+                                                              beta1=self._beta1).minimize(softmax_cee1) # output_stride=8
                 else:
                     raise NotImplementedError('Other optimizers have not been considered.')
         
