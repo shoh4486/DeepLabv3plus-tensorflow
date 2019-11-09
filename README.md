@@ -9,8 +9,8 @@
 - tf.\_\_version\_\_ == '1.12.0' ~ '1.14.0'
 - Only CPU: set FLAGS.gpu_num to 0 in main.py.
 - The number of GPUs > 2: mannually allocate them.
-- Inputs shape: (N, H, W, C) (0~1)
-- Ground truths shape: (N, H, W, num_class) (0 or 1)
+- **Inputs shape: (N, H, W, C) (0~1)**
+- **Ground truths shape: (N, H, W, num_class) (0 or 1)**
 ## Author
 Sehyeok Oh @shoh4486
 ## Author's application
