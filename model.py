@@ -308,7 +308,6 @@ class DeepLabv3plus:
         self._beta1 = 0.9 # beta1 in Adam optimizer
         self.save_dir = save_dir
         self.gpu_num = gpu_num
-        assert self.gpu_num < 3, 'If the number of gpus is larger than 2, allocate them mannually.'
         np.random.seed(self.seed)
         tf.set_random_seed(self.seed)
         self.build_model()
