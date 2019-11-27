@@ -10,9 +10,8 @@ import pprint
 from model import DeepLabv3plus
 from utils import *
 
-trial_num = 1
-
 flags = tf.app.flags
+flags.DEFINE_integer('trial_num', 1, 'trial number')
 flags.DEFINE_integer('C_in', 3, 'the number of input channels')
 flags.DEFINE_integer('num_class', 4, 'the number of classes')
 flags.DEFINE_bool('separable', True, 'applying separable convoluion')
@@ -20,7 +19,6 @@ flags.DEFINE_integer('seed', 1, 'seed number')
 flags.DEFINE_float('weight_decay_lambda', 1e-07, 'L2 weight decay lambda')
 flags.DEFINE_bool('truncated', False, 'truncated weight distribution')
 flags.DEFINE_string('optimizer', 'Adam', 'optimizer')
-flags.DEFINE_string('save_dir', os.path.join("./trials", "trial_{0}".format(trial_num)), 'output saving directory')
 flags.DEFINE_integer('gpu_num', 2, 'the number of GPUs')
 flags.DEFINE_integer('H_train', 300, 'height dimension while training (fixed)')
 flags.DEFINE_integer('W_train', 400, 'width dimension while training (fixed)')
@@ -45,6 +43,7 @@ flags.DEFINE_integer('output_stride_testing', 8, 'output stride in the training 
 FLAGS = flags.FLAGS
 
 def main(_):
+    flags.DEFINE_string('save_dir', os.path.join("./trials", "trial_{0}".format(FLAGS.trial_num)), 'output saving directory')
     pprint.pprint(flags.FLAGS.__flags)
     
     mkdir(FLAGS.save_dir)
