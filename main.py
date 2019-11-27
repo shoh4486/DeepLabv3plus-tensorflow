@@ -37,17 +37,14 @@ flags.DEFINE_boolean('train', False, 'True for training, False for evaluation')
 flags.DEFINE_boolean('restore', True, 'True for retoring, False for raw training')
 flags.DEFINE_integer('restore_trial_num', 1, 'directory number of pretrained model')
 flags.DEFINE_integer('restore_sess_num', 1499, 'sess number of pretrained model')
-flags.DEFINE_integer('restart_epoch', 100, 'restart epoch') 
-flags.DEFINE_integer('re_end_epoch', 200, 're-end epoch')
+flags.DEFINE_integer('restart_epoch', 100, 'train restart epoch') 
+flags.DEFINE_integer('re_end_epoch', 200, 'train re-end epoch')
 flags.DEFINE_boolean('eval_with_test_acc', True, 'True for test accuracies evaluation')
 flags.DEFINE_integer('output_stride_testing', 8, 'output stride in the training mode')
 FLAGS = flags.FLAGS
 
 def main(_):
-    flags.DEFINE_string('save_dir', os.path.join("./trials", "trial_{0}".format(FLAGS.trial_num)), 'output saving directory')
-    flags.DEFINE_string('pre_train_dir', os.path.join("./trials", "trial_{0}".format(FLAGS.restore_trial_num), 
-                                                      "sess-{0}".format(FLAGS.restore_sess_num)), 
-                        'when retraining, directory to restore.')
+    flags.DEFINE_string('save_dir', os.path.join("./trials", "trial_{0}".format(FLAGS.trial_num)), 'output saving directory')    
     pprint.pprint(flags.FLAGS.__flags)
     
     mkdir(FLAGS.save_dir)
@@ -87,7 +84,7 @@ def main(_):
         
         if FLAGS.restore:
             saver = tf.train.Saver()
-            saver.restore(sess, FLAGS.pre_train_dir)
+            saver.restore(sess, os.path.join("./trials", "trial_{0}".format(FLAGS.restore_trial_num), "sess-{0}".format(FLAGS.restore_sess_num)))
             FLAGS.start_epoch = FLAGS.restart_epoch
             FLAGS.end_epoch = FLAGS.re_end_epoch
             deeplabv3plus.train(
@@ -127,7 +124,7 @@ def main(_):
         
         if FLAGS.restore:
             saver = tf.train.Saver()
-            saver.restore(sess, FLAGS.pre_train_dir)
+            saver.restore(sess, os.path.join("./trials", "trial_{0}".format(FLAGS.restore_trial_num), "sess-{0}".format(FLAGS.restore_sess_num)))
             if FLAGS.eval_with_test_acc:
                 test_results = deeplabv3plus.evaluation(
                                                         inputs=inputs_test,
