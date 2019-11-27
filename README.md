@@ -12,8 +12,14 @@
 - **Inputs shape: (N, H, W, C) (0~1)**
 - **Ground truths shape: (N, H, W, num_class) (0 or 1)**
 ## Run example
-- training mode: $ python main.py --trial_num=1 --C_in=3 --num_class=4 --train
-- testing mode: $ python main.py --trial_num=2 --train=False --restore --restore_trial_num=1 --restore_sess_num=1499
+- training mode: 
+```
+$ python main.py --trial_num=1 --C_in=3 --num_class=4 --train --start_epoch=0 --end_epoch=200
+```
+- testing mode: 
+```
+$ python main.py --trial_num=2 --train=False --restore --restore_trial_num=1 --restore_sess_num=199 --eval_with_test_acc --output_stride_testing=8
+```
 - Add other FLAGS options if necessary
 ## Author
 Sehyeok Oh @shoh4486
