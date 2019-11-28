@@ -538,12 +538,12 @@ class DeepLabv3plus:
             # height list for random scaling / integers between H_train and H_orig
             W_list = list(range(W_train, W_orig + 1, int(W_orig/gcd))) 
             # width list for random scaling / integers between W_train and W_orig / len(W_list) = len(H_list)
-            HW_list = list(dict(zip(H_list, W_list)).items()) 
+            HW_list = list(zip(H_list, W_list))
             # a list containing (height, width) as elements
         else:
             H_list = list(range(H_train, H_orig + 1, 1))
             W_list = list(range(W_train, W_orig + 1, 1))
-            HW_list = list(dict(zip(H_list, W_list)).items())
+            HW_list = list(zip(H_list, W_list))
         ########################################
         
         for epoch in range(config.start_epoch, config.end_epoch):
