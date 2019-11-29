@@ -282,8 +282,8 @@ class DeepLabv3plus:
 
     - Only Xception applied as a backbone structure of the encoder (no DeepLabv3 as the backbone).
     """
-    def __init__(self, sess, C_in, num_class, separable_aspp_decoder, seed, weight_decay_lambda=None, truncated=False, optimizer='Adam',
-                 save_dir="./", gpu_num=2):
+    def __init__(self, sess, C_in, num_class, separable_aspp_decoder, seed, 
+                 weight_decay_lambda=None, truncated=False, optimizer='Adam', gpu_num=2):
         """
         Parameters
         sess: TensorFlow sesson
@@ -294,7 +294,6 @@ class DeepLabv3plus:
         weight_decay_lambda: L2 weight decay lambda (0.0: do not employ)
         truncated: truncated weight distribution
         optimizer: only Adam adopted
-        save_dir: saving directory for the training results
         gpu_num: the number of gpus
         """
         self.sess = sess
@@ -306,7 +305,6 @@ class DeepLabv3plus:
         self.truncated = truncated
         self.optimizer = optimizer
         self._beta1 = 0.9 # beta1 in Adam optimizer
-        self.save_dir = save_dir
         self.gpu_num = gpu_num
         np.random.seed(self.seed)
         tf.set_random_seed(self.seed)
@@ -491,7 +489,7 @@ class DeepLabv3plus:
             self.sess.run(tf.global_variables_initializer())
         
         merge = tf.summary.merge_all()
-        writer = tf.summary.FileWriter(self.save_dir, self.sess.graph)
+        writer = tf.summary.FileWriter(config.save_dir, self.sess.graph)
         
         self.CEE_train_vals, self.miou_train_vals, self.PA_ALL_train_vals = [], [], []
         self.CEE_valid_vals, self.miou_valid_vals, self.PA_ALL_valid_vals = [], [], []

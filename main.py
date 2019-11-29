@@ -11,7 +11,7 @@ from model import DeepLabv3plus
 from utils import *
 
 flags = tf.app.flags
-flags.DEFINE_integer('trial_num', 1, 'trial number')
+# for model class instantiation
 flags.DEFINE_integer('C_in', 3, 'the number of input channels')
 flags.DEFINE_integer('num_class', 4, 'the number of classes')
 flags.DEFINE_bool('separable', True, 'applying separable convoluion')
@@ -20,24 +20,27 @@ flags.DEFINE_float('weight_decay_lambda', 1e-07, 'L2 weight decay lambda')
 flags.DEFINE_bool('truncated', False, 'truncated weight distribution')
 flags.DEFINE_string('optimizer', 'Adam', 'optimizer')
 flags.DEFINE_integer('gpu_num', 2, 'the number of GPUs')
-flags.DEFINE_integer('H_train', 300, 'height dimension while training (fixed)')
-flags.DEFINE_integer('W_train', 400, 'width dimension while training (fixed)')
+#
+flags.DEFINE_integer('trial_num', 1, 'trial number')
+flags.DEFINE_integer('H_train', 300, 'image height while training (fixed)')
+flags.DEFINE_integer('W_train', 400, 'image width while training (fixed)')
 flags.DEFINE_integer('output_stride_training', 16, 'output stride in the training mode')
 flags.DEFINE_boolean('random_scaling_keep_aspect_ratio', True, 'keep aspect ratio when rescaling augmentation')
 flags.DEFINE_boolean('bn_training', True, 'training the BN parameters while training')
 flags.DEFINE_boolean('random_brightness_contrast', False, 'applying random brightness and random contrast')
-flags.DEFINE_float('lr_init', 1e-03, 'initial learning rate')
-flags.DEFINE_bool('lr_decay', True, 'learning rate decay')
 flags.DEFINE_integer('n_aug', 200, 'the number of augmentations')
 flags.DEFINE_integer('batch_size_training', 6, 'batch size')
-flags.DEFINE_integer('check_epoch', 1, 'check epoch')
+flags.DEFINE_float('lr_init', 1e-03, 'initial learning rate')
+flags.DEFINE_bool('lr_decay', True, 'applying learning rate decay')
+#
+flags.DEFINE_boolean('train', True, 'True for training, False for testing')
+flags.DEFINE_boolean('restore', False, 'True for restoring, False for raw training')
 flags.DEFINE_integer('start_epoch', 0, 'start epoch') 
 flags.DEFINE_integer('end_epoch', 50, 'end epoch')
-flags.DEFINE_boolean('train', True, 'True for training, False for evaluation')
-flags.DEFINE_boolean('restore', False, 'True for retoring, False for raw training')
+flags.DEFINE_integer('check_epoch', 1, 'check epoch')
 # if not restoring, do not concern below flags.
-flags.DEFINE_integer('restore_trial_num', 1, 'directory number of pretrained model')
-flags.DEFINE_integer('restore_sess_num', 49, 'sess number of pretrained model')
+flags.DEFINE_integer('restore_trial_num', 1, 'directory number of the pretrained model')
+flags.DEFINE_integer('restore_sess_num', 49, 'sess number of the pretrained model')
 flags.DEFINE_boolean('eval_with_test_acc', True, 'True for test accuracies evaluation')
 flags.DEFINE_integer('output_stride_testing', 8, 'output stride in the training mode')
 FLAGS = flags.FLAGS
@@ -54,7 +57,9 @@ def main(_):
         run_config.gpu_options.allow_growth = True
         sess = tf.Session(config=run_config)
     else: # only cpu
-        sess = tf.Session()
+        run_config = tf.ConfigProto(
+                device_count={'GPU': 0}) # even if there are GPUs, they will be ignored.
+        sess = tf.Session(config=run_config)
     
     deeplabv3plus = DeepLabv3plus(
                                   sess=sess,
@@ -65,11 +70,10 @@ def main(_):
                                   weight_decay_lambda=FLAGS.weight_decay_lambda,
                                   truncated=FLAGS.truncated,
                                   optimizer=FLAGS.optimizer,
-                                  save_dir=FLAGS.save_dir,
                                   gpu_num=FLAGS.gpu_num
                                   )
     
-    global_variables_list()
+    tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
     
     if FLAGS.train:
         from data.data_preprocessing import inputs_train, inputs_train_, inputs_valid, gts_train, gts_train_, gts_valid
