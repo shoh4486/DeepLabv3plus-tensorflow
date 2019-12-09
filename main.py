@@ -51,6 +51,7 @@ def main(_):
     
     mkdir(FLAGS.save_dir)
     mkdir(os.path.join(FLAGS.save_dir, "test"))
+    mkdir(os.path.join(FLAGS.save_dir, "loss_acc"))
     
     if FLAGS.gpu_num: # gpu_num >= 1
         run_config = tf.ConfigProto()
@@ -92,26 +93,24 @@ def main(_):
                                 inputs=(inputs_train, inputs_train_, inputs_valid),
                                 gts=(gts_train, gts_train_, gts_valid),
                                 config=FLAGS
-                                )
-            saver = tf.train.Saver()
-            saver.save(sess, os.path.join(FLAGS.save_dir, "sess"), global_step=FLAGS.end_epoch-1)
-        
+                                )       
         else:  
             deeplabv3plus.train(
                                 inputs=(inputs_train, inputs_train_, inputs_valid),
                                 gts=(gts_train, gts_train_, gts_valid),
                                 config=FLAGS
                                 )
-            saver = tf.train.Saver()
-            saver.save(sess, os.path.join(FLAGS.save_dir, "sess"), global_step=FLAGS.end_epoch-1)
         
-        np.savetxt(os.path.join(FLAGS.save_dir, "CEE_train.txt"), deeplabv3plus.CEE_train_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "miou_train.txt"), deeplabv3plus.miou_train_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "PA_ALL_train.txt"), deeplabv3plus.PA_ALL_train_vals)
+        saver = tf.train.Saver()
+        saver.save(sess, os.path.join(FLAGS.save_dir, "sess"), global_step=FLAGS.end_epoch-1)
         
-        np.savetxt(os.path.join(FLAGS.save_dir, "CEE_valid.txt"), deeplabv3plus.CEE_valid_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "miou_valid.txt"), deeplabv3plus.miou_valid_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "PA_ALL_valid.txt"), deeplabv3plus.PA_ALL_valid_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "CEE_train.txt"), deeplabv3plus.CEE_train_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "miou_train.txt"), deeplabv3plus.miou_train_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "PA_ALL_train.txt"), deeplabv3plus.PA_ALL_train_vals)
+        
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "CEE_valid.txt"), deeplabv3plus.CEE_valid_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "miou_valid.txt"), deeplabv3plus.miou_valid_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "PA_ALL_valid.txt"), deeplabv3plus.PA_ALL_valid_vals)
         
     else: # testing mode
         try:
