@@ -17,7 +17,6 @@ flags.DEFINE_integer('num_class', 4, 'the number of classes')
 flags.DEFINE_bool('separable', True, 'applying separable convoluion')
 flags.DEFINE_integer('seed', 1, 'seed number')
 flags.DEFINE_float('weight_decay_lambda', 1e-07, 'L2 weight decay lambda')
-flags.DEFINE_bool('truncated', False, 'truncated weight distribution')
 flags.DEFINE_string('optimizer', 'Adam', 'optimizer')
 flags.DEFINE_list('gpu_alloc', [0, 1], 'specifying which GPU(s) to be used; [] if to use only cpu')
 # e.g. set it to [0, 1] if to use the first(0) and the second(1) gpus
@@ -78,7 +77,6 @@ def main(_):
                                   separable_aspp_decoder=FLAGS.separable,
                                   seed=FLAGS.seed,
                                   weight_decay_lambda=FLAGS.weight_decay_lambda,
-                                  truncated=FLAGS.truncated,
                                   optimizer=FLAGS.optimizer,
                                   gpu_alloc=FLAGS.gpu_alloc
                                   )
