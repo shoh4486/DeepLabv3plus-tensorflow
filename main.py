@@ -19,7 +19,11 @@ flags.DEFINE_integer('seed', 1, 'seed number')
 flags.DEFINE_float('weight_decay_lambda', 1e-07, 'L2 weight decay lambda')
 flags.DEFINE_bool('truncated', False, 'truncated weight distribution')
 flags.DEFINE_string('optimizer', 'Adam', 'optimizer')
-flags.DEFINE_integer('gpu_num', 2, 'the number of GPUs')
+flags.DEFINE_list('gpu_alloc', [0, 1], 'specifying which GPU(s) to be used; [] if to use only cpu')
+# e.g. set it to [0, 1] if to use the first(0) and the second(1) gpus
+# Note: the order of elements in FLAGS.gpu_alloc should be correctly inserted.
+# if it is [1, 0], the first(0) gpu is assigned to '/device:GPU:1' and the second(1) gpu to '/device:GPU:0'.
+# if it is [2, 3], the third(2) gpu is assgined to '/device:GPU:0' and the fourth(3) gpu to '/device:GPU:1'.
 #
 flags.DEFINE_integer('trial_num', 1, 'trial number')
 flags.DEFINE_integer('H_train', 300, 'image height while training (fixed)')
@@ -46,20 +50,25 @@ flags.DEFINE_integer('output_stride_testing', 8, 'output stride in the training 
 FLAGS = flags.FLAGS
 
 def main(_):
-    flags.DEFINE_string('save_dir', os.path.join("./trials", "trial_{0}".format(FLAGS.trial_num)), 'output saving directory')    
+    flags.DEFINE_string('save_dir', os.path.join("./trials", "trial_{0}".format(FLAGS.trial_num)), 
+                        'output saving directory')    
     pprint.pprint(flags.FLAGS.__flags)
     
     mkdir(FLAGS.save_dir)
     mkdir(os.path.join(FLAGS.save_dir, "test"))
     mkdir(os.path.join(FLAGS.save_dir, "loss_acc"))
     
-    if FLAGS.gpu_num: # gpu_num >= 1
-        run_config = tf.ConfigProto()
-        run_config.gpu_options.allow_growth = True
+    if FLAGS.gpu_alloc: # gpu_num >= 1
+        visible_device_list = ','.join([str(i) for i in FLAGS.gpu_alloc])    
+        gpu_options = tf.GPUOptions(
+            allow_growth=True, 
+            visible_device_list=visible_device_list
+            )
+        run_config = tf.ConfigProto(gpu_options=gpu_options)
         sess = tf.Session(config=run_config)
     else: # only cpu
-        run_config = tf.ConfigProto(
-                device_count={'GPU': 0}) # even if there are GPUs, they will be ignored.
+        run_config = tf.ConfigProto(device_count={'GPU': 0}) 
+        # even if there are GPUs, they will be ignored.
         sess = tf.Session(config=run_config)
     
     deeplabv3plus = DeepLabv3plus(
@@ -71,13 +80,14 @@ def main(_):
                                   weight_decay_lambda=FLAGS.weight_decay_lambda,
                                   truncated=FLAGS.truncated,
                                   optimizer=FLAGS.optimizer,
-                                  gpu_num=FLAGS.gpu_num
+                                  gpu_alloc=FLAGS.gpu_alloc
                                   )
     
     tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
     
     if FLAGS.train:
-        from data.data_preprocessing import inputs_train, inputs_train_, inputs_valid, gts_train, gts_train_, gts_valid
+        from data.data_preprocessing import inputs_train, inputs_train_, \
+        inputs_valid, gts_train, gts_train_, gts_valid
         inputs_col = [inputs_train, inputs_train_, inputs_valid]
         for i in inputs_col:
             inputs_pixel_checker(i)
@@ -88,7 +98,8 @@ def main(_):
         
         if FLAGS.restore:
             saver = tf.train.Saver()
-            saver.restore(sess, os.path.join("./trials", "trial_{0}".format(FLAGS.restore_trial_num), "sess-{0}".format(FLAGS.restore_sess_num)))
+            saver.restore(sess, os.path.join("./trials", "trial_{0}".format(FLAGS.restore_trial_num), 
+                                             "sess-{0}".format(FLAGS.restore_sess_num)))
             deeplabv3plus.train(
                                 inputs=(inputs_train, inputs_train_, inputs_valid),
                                 gts=(gts_train, gts_train_, gts_valid),
@@ -104,13 +115,19 @@ def main(_):
         saver = tf.train.Saver()
         saver.save(sess, os.path.join(FLAGS.save_dir, "sess"), global_step=FLAGS.end_epoch-1)
         
-        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "CEE_train.txt"), deeplabv3plus.CEE_train_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "miou_train.txt"), deeplabv3plus.miou_train_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "PA_ALL_train.txt"), deeplabv3plus.PA_ALL_train_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "CEE_train.txt"), 
+                   deeplabv3plus.CEE_train_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "miou_train.txt"), 
+                   deeplabv3plus.miou_train_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "PA_ALL_train.txt"), 
+                   deeplabv3plus.PA_ALL_train_vals)
         
-        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "CEE_valid.txt"), deeplabv3plus.CEE_valid_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "miou_valid.txt"), deeplabv3plus.miou_valid_vals)
-        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "PA_ALL_valid.txt"), deeplabv3plus.PA_ALL_valid_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "CEE_valid.txt"), 
+                   deeplabv3plus.CEE_valid_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "miou_valid.txt"), 
+                   deeplabv3plus.miou_valid_vals)
+        np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "PA_ALL_valid.txt"), 
+                   deeplabv3plus.PA_ALL_valid_vals)
         
     else: # testing mode
         try:
@@ -124,7 +141,8 @@ def main(_):
         
         if FLAGS.restore:
             saver = tf.train.Saver()
-            saver.restore(sess, os.path.join("./trials", "trial_{0}".format(FLAGS.restore_trial_num), "sess-{0}".format(FLAGS.restore_sess_num)))
+            saver.restore(sess, os.path.join("./trials", "trial_{0}".format(FLAGS.restore_trial_num), 
+                                             "sess-{0}".format(FLAGS.restore_sess_num)))
             if FLAGS.eval_with_test_acc:
                 test_results = deeplabv3plus.evaluation(
                                                         inputs=inputs_test,
@@ -132,9 +150,12 @@ def main(_):
                                                         gts=gts_test
                                                         )
                 seg_test, CEE_test, miou_test, PA_ALL_test = test_results
-                np.savetxt(os.path.join(FLAGS.save_dir, "test", "CEE_test.txt"), CEE_test)
-                np.savetxt(os.path.join(FLAGS.save_dir, "test", "miou_test.txt"), miou_test)
-                np.savetxt(os.path.join(FLAGS.save_dir, "test", "PA_ALL_test.txt"), PA_ALL_test)
+                np.savetxt(os.path.join(FLAGS.save_dir, "test", "CEE_test.txt"), 
+                           CEE_test)
+                np.savetxt(os.path.join(FLAGS.save_dir, "test", "miou_test.txt"), 
+                           miou_test)
+                np.savetxt(os.path.join(FLAGS.save_dir, "test", "PA_ALL_test.txt"), 
+                           PA_ALL_test)
             
             else:
                 seg_test = deeplabv3plus.evaluation(
@@ -144,7 +165,8 @@ def main(_):
                                                     )
             for i in range(len(seg_test)):
                 for c in range(FLAGS.num_class):
-                    np.savetxt(os.path.join(FLAGS.save_dir, "test", "test_result%d_class%d.txt" % (i, c)), seg_test[i, :, :, c])
+                    np.savetxt(os.path.join(FLAGS.save_dir, "test", "test_result%d_class%d.txt" % (i, c)), 
+                               seg_test[i, :, :, c])
         else:
             raise NotImplementedError('pretrained session must be restored.')
             
