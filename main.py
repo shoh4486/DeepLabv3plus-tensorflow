@@ -58,11 +58,17 @@ def main(_):
     mkdir(os.path.join(FLAGS.save_dir, "loss_acc"))
     
     if FLAGS.gpu_alloc: # gpu_num >= 1
-        visible_device_list = ','.join([str(i) for i in FLAGS.gpu_alloc])    
+        visible_device_list = ','.join([str(i) for i in FLAGS.gpu_alloc])
+        # Method1: Specify to-be-used GPUs in tf.GPUOptions.
+        # Other GPUs will be blinded.
         gpu_options = tf.GPUOptions(
             allow_growth=True, 
             visible_device_list=visible_device_list
             )
+        # Method2: Specify to-be-used GPUs in CUDA. 
+        # os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+        # os.environ['CUDA_VISIBLE_DEVICES'] = visible_device_list
+        # gpu_options = tf.GPUOptions(allow_growth=True)
         run_config = tf.ConfigProto(gpu_options=gpu_options)
         sess = tf.Session(config=run_config)
     else: # only cpu
