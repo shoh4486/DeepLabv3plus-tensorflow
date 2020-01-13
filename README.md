@@ -10,6 +10,7 @@
   - The augmented training data was then resized to the fixed size of (H, W) = (H_train, W_train), which should be set through the argument parser.
   - Thus, the real image size while training is smaller than the original image size (H_train < H_orig, W_train < W_orig). 
   - Moderately set H_train and W_train in argument parser if not to keep aspect ratio in random scaling. To keep it, H_train:W_train must be equal to H_orig:W_orig.
+  
 - tf.\_\_version\_\_ == '1.12.0' ~ '1.14.0' (1.15 not tested)
 - The number of GPUs > 2: mannually allocate them.
 - **Inputs shape: (N, H, W, C) (0~1)**
