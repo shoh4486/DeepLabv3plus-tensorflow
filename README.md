@@ -5,7 +5,11 @@
 - CNN-based encoder-decoder with atrous separable convolution
 ## In this code
 - DeepLabv3+ == Modified aligned Xception + ASPP + U-Net style decoder
-- Augmentation: In a training phase, random cropping and random scaling were employed and then resized to the fixed training image size (H_train, W_train). Thus, training image size is smaller than the original image size (H_train < H_orig, W_train < W_orig). Moderately set H_train and W_train in argument parser.
+- Augmentation
+  - In the training phase, random scaling, random cropping and random flipping were employed to the input training data of shape (H, W) = (H_orig, W_orig).
+  - The augmented training data was then resized to the fixed size of (H, W) = (H_train, W_train), which should be set through the argument parser.
+  - Thus, the real image size while training is smaller than the original image size (H_train < H_orig, W_train < W_orig). 
+  - Moderately set H_train and W_train in argument parser if not to keep aspect ratio in random scaling. To keep it, H_train:W_train must be equal to H_orig:W_orig.
 - tf.\_\_version\_\_ == '1.12.0' ~ '1.14.0' (1.15 not tested)
 - The number of GPUs > 2: mannually allocate them.
 - **Inputs shape: (N, H, W, C) (0~1)**
