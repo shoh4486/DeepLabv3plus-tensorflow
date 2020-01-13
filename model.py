@@ -590,7 +590,7 @@ class DeepLabv3plus:
         ######################################## list2 for random scaling
         if config.random_scaling_keep_aspect_ratio:
             assert H_orig*W_train == H_train*W_orig, \
-            'Aspect ratio should be kept between (H_orig, W_orig) and (H_train, W_train).'
+            'Aspect ratio must be kept between (H_orig, W_orig) and (H_train, W_train).'
             # check whether H_orig:W_orig == H_train:W_train or not
             gcd = np.gcd(H_orig, W_orig) # greatest common divisor
             H_list = list(range(H_train, H_orig + 1, int(H_orig/gcd))) 
@@ -719,9 +719,8 @@ class DeepLabv3plus:
                 self.miou_valid_vals.append(miou_valid_val)
                 self.PA_ALL_valid_vals.append(PA_ALL_valid_val)
                     
-                print('Epoch: %d, lr: %f, dt: (%f, %f), CEE_train: %f, \
-                      miou_train: %f, PA_train: %f, CEE_valid: %f, miou_valid: %f, \
-                      PA_valid: %f' \
+                print('Epoch: %d, lr: %f, dt: (%f, %f), CEE_train: %f, miou_train: %f, PA_train: %f, \
+                      CEE_valid: %f, miou_valid: %f, PA_valid: %f' \
                       % (epoch, lr_tmp, t2-t1, t4-t3, CEE_train_val, miou_train_val, 
                          PA_ALL_train_val, CEE_valid_val, miou_valid_val, PA_ALL_valid_val))
 
