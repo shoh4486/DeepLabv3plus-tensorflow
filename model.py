@@ -538,7 +538,7 @@ class DeepLabv3plus:
                 
         H_orig, W_orig = inputs_train.shape[1], inputs_train.shape[2] # original image size
         H_train, W_train = config.H_train, config.W_train 
-        # training size (fixed)
+        # training size (fixed); H_train < H_orig, W_train < W_orig
         # in a training phase, random cropping and random scaling were employed and 
         # then resized to the fixed training image size (H_train, W_train)
         
@@ -579,7 +579,7 @@ class DeepLabv3plus:
         tmp_data = tf.placeholder(tf.float32, shape=(1, None, None, None)) # one by one
         tmp_nn = tf.image.resize_images(tmp_data, size=[H_train, W_train], 
                                         method=tf.image.ResizeMethod.NEAREST_NEIGHBOR, 
-                                        align_corners=True, preserve_aspect_ratio=True)
+                                        align_corners=True)#, preserve_aspect_ratio=True)
         tmp_data2 = tf.placeholder(tf.float32, shape=(H_train, W_train, None)) # one by one
         tmp_random = self.random_brightness_contrast(tmp_data2)
         
@@ -649,10 +649,10 @@ class DeepLabv3plus:
                     # resizing to [H_train, W_train]
                     tmp1.append(self.sess.run(tmp_nn, feed_dict={tmp_data: tmp_gts}))
 
-                inputs_batch = np.concatenate(tuple(tmp0), axis=0).reshape(config.batch_size_training, 
-                                             H_train, W_train, -1)
-                gts_batch = np.concatenate(tuple(tmp1), axis=0).reshape(config.batch_size_training, 
-                                          H_train, W_train, -1)
+                inputs_batch = np.concatenate(tmp0, axis=0).reshape(config.batch_size_training, 
+                                              H_train, W_train, -1)
+                gts_batch = np.concatenate(tmp1, axis=0).reshape(config.batch_size_training, 
+                                           H_train, W_train, -1)
                 
                 if config.random_brightness_contrast:
                     tmp2 = []
@@ -688,8 +688,8 @@ class DeepLabv3plus:
                 = self.sess.run([hardmax_de_aspp_x, softmax_cee, miou, PA_ALL, merge],
                                 feed_dict={self.inputs: inputs_train_, 
                                            self.gts: gts_train_, 
-                                           self.H: H_train, 
-                                           self.W: W_train,
+                                           self.H: inputs_train_.shape[1], 
+                                           self.W: inputs_train_.shape[2],
                                            self.is_training: False,
                                            self.drop_rate0: 0.0, 
                                            self.drop_rate1: 0.0, 
@@ -704,8 +704,8 @@ class DeepLabv3plus:
                 = self.sess.run([hardmax_de_aspp_x, softmax_cee, miou, PA_ALL], 
                                 feed_dict={self.inputs: inputs_valid, 
                                            self.gts: gts_valid, 
-                                           self.H: H_train, 
-                                           self.W: W_train,
+                                           self.H: inputs_valid.shape[1], 
+                                           self.W: inputs_valid.shape[2],
                                            self.is_training: False,
                                            self.drop_rate0: 0.0, 
                                            self.drop_rate1: 0.0, 
