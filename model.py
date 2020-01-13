@@ -589,11 +589,15 @@ class DeepLabv3plus:
         
         ######################################## list2 for random scaling
         if config.random_scaling_keep_aspect_ratio:
+            assert H_orig*W_train == H_train*W_orig, \
+            'Aspect ratio should be kept between (H_orig, W_orig) and (H_train, W_train).'
+            # check whether H_orig:W_orig == H_train:W_train or not
             gcd = np.gcd(H_orig, W_orig) # greatest common divisor
             H_list = list(range(H_train, H_orig + 1, int(H_orig/gcd))) 
             # height list for random scaling / integers between H_train and H_orig
             W_list = list(range(W_train, W_orig + 1, int(W_orig/gcd))) 
-            # width list for random scaling / integers between W_train and W_orig / len(W_list) = len(H_list)
+            # width list for random scaling / integers between W_train and W_orig
+            # len(W_list) = len(H_list)
             HW_list = list(zip(H_list, W_list))
             # a list containing (height, width) as elements
         else:
