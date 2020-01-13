@@ -6,7 +6,7 @@
 ## In this code
 - DeepLabv3+ == Modified aligned Xception + ASPP + U-Net style decoder
 - Augmentation
-  - In the training phase, random scaling, random cropping and random flipping were employed to the input training data of shape (H, W) = (H_orig, W_orig).
+  - In the training phase, random scaling (only enlargement), random cropping and random flipping were employed to the input training data of shape (H, W) = (H_orig, W_orig).
   - The augmented training data was then resized to the fixed size of (H, W) = (H_train, W_train), which should be set through the argument parser.
   - Thus, the real image size while training is smaller than the original image size (H_train < H_orig, W_train < W_orig). 
   - Moderately set H_train and W_train in argument parser if not to keep aspect ratio in random scaling. To keep it, H_train:W_train must be equal to H_orig:W_orig.
