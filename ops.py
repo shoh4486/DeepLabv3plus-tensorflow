@@ -300,8 +300,6 @@ class Block:
     """
     def __init__(self, weight_decay_lambda=None):
         self.weight_decay_lambda = weight_decay_lambda
-        self.truncated = truncated
-        self.stddev = stddev
         self.sepconv2d = SepConv2D(3, 3, 1, self.weight_decay_lambda)
         self.bn = BN()
         self.conv2d = Conv2D(1, 1, self.weight_decay_lambda)
