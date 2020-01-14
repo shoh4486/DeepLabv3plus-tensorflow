@@ -18,11 +18,11 @@
 ## Run example
 - training mode: 
 ```
-$ python main.py --trial_num=1 --C_in=3 --num_class=4 --H_train=250 --W_train=350 --n_aug=100 --train=True --start_epoch=0 --end_epoch=200
+$ python main.py --trial_num=1 --C_in=3 --num_class=4 --H_train=250 --W_train=350 --n_aug=100 --train=True --start_epoch=0 --end_epoch=200 --gpu_alloc=1,2
 ```
 - testing mode: 
 ```
-$ python main.py --trial_num=2 --train=False --restore=True --restore_trial_num=1 --restore_sess_num=199 --eval_with_test_acc=True --output_stride_testing=8
+$ python main.py --trial_num=2 --train=False --restore=True --restore_trial_num=1 --restore_sess_num=199 --eval_with_test_acc=True --output_stride_testing=8 --gpu_alloc=1,2
 ```
 - Add other FLAGS options if necessary
 ## Author
