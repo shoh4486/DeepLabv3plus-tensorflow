@@ -66,8 +66,7 @@ def main(_):
         assert '0' not in FLAGS.gpu_alloc      
         visible_device_list = ','.join([str(int(i) - 1) for i in FLAGS.gpu_alloc])
         # If FLAGS.gpu_alloc == ['1', '2'], it is converted to '0,1'. GPU number starts from 0.        
-        # Method1: Specify to-be-used GPUs in tf.GPUOptions.
-        # Other GPUs will be blinded.
+        # Method1: Specify to-be-used GPUs in tf.GPUOptions. Other GPUs will be blinded.
         gpu_options = tf.GPUOptions(
             allow_growth=True, 
             visible_device_list=visible_device_list
