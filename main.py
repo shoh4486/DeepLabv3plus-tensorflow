@@ -18,11 +18,12 @@ flags.DEFINE_bool('separable', True, 'applying separable convoluion')
 flags.DEFINE_integer('seed', 1, 'seed number')
 flags.DEFINE_float('weight_decay_lambda', 1e-07, 'L2 weight decay lambda')
 flags.DEFINE_string('optimizer', 'Adam', 'optimizer')
-flags.DEFINE_list('gpu_alloc', [0, 1], 'specifying which GPU(s) to be used; [] if to use only cpu')
-# e.g. set it to [0, 1] if to use the first(0) and the second(1) gpus
+flags.DEFINE_list('gpu_alloc', ['1', '2'], 'specifying which GPU(s) to be used; set to 0 to use only cpu')
+# Registers a flag whose value is a comma-separated list of strings, e.g. ['1', '2'].
+# e.g. set --gpu_alloc=1,2 if to use the first and the second GPUs.
 # Note: the order of elements in FLAGS.gpu_alloc should be correctly inserted.
-# if it is [1, 0], the first(0) gpu is assigned to '/device:GPU:1' and the second(1) gpu to '/device:GPU:0'.
-# if it is [2, 3], the third(2) gpu is assgined to '/device:GPU:0' and the fourth(3) gpu to '/device:GPU:1'.
+# if it is 2,1, the first GPU is assigned to '/device:GPU:1' and the second GPU to '/device:GPU:0'.
+# if it is 3,4, the third GPU is assgined to '/device:GPU:0' and the fourth GPU to '/device:GPU:1'.
 #
 flags.DEFINE_integer('trial_num', 1, 'trial number')
 flags.DEFINE_integer('H_train', 300, 'image height while training (fixed)')
@@ -57,8 +58,14 @@ def main(_):
     mkdir(os.path.join(FLAGS.save_dir, "test"))
     mkdir(os.path.join(FLAGS.save_dir, "loss_acc"))
     
-    if FLAGS.gpu_alloc: # gpu_num >= 1
-        visible_device_list = ','.join([str(i) for i in FLAGS.gpu_alloc])
+    if FLAGS.gpu_alloc == ['0']:
+        run_config = tf.ConfigProto(device_count={'GPU': 0}) 
+        # even if there are GPUs, they will be ignored.
+        sess = tf.Session(config=run_config)
+    else:
+        assert '0' not in FLAGS.gpu_alloc      
+        visible_device_list = ','.join([str(int(i) - 1) for i in FLAGS.gpu_alloc])
+        # If FLAGS.gpu_alloc == ['1', '2'], it is converted to '0,1'. GPU number starts from 0.        
         # Method1: Specify to-be-used GPUs in tf.GPUOptions.
         # Other GPUs will be blinded.
         gpu_options = tf.GPUOptions(
@@ -70,10 +77,6 @@ def main(_):
         # os.environ['CUDA_VISIBLE_DEVICES'] = visible_device_list
         # gpu_options = tf.GPUOptions(allow_growth=True)
         run_config = tf.ConfigProto(gpu_options=gpu_options)
-        sess = tf.Session(config=run_config)
-    else: # only cpu
-        run_config = tf.ConfigProto(device_count={'GPU': 0}) 
-        # even if there are GPUs, they will be ignored.
         sess = tf.Session(config=run_config)
     
     deeplabv3plus = DeepLabv3plus(
