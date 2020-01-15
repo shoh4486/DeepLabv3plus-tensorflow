@@ -11,7 +11,7 @@
   - Thus, the real image size while training is smaller than the original image size (H_train < H_orig, W_train < W_orig). 
   - Moderately set H_train and W_train in argument parser if not to keep aspect ratio in random scaling. To keep it, H_train:W_train must be equal to H_orig:W_orig.
   
-- tf.\_\_version\_\_ == '1.12.0' ~ '1.14.0' (1.15 not tested)
+- tf.\_\_version\_\_ == '1.12.0' ~ '1.15.0' (1.15 tested normally)
 - The number of GPUs > 2: mannually allocate them.
 - **Inputs shape: (N, H, W, C) (0~1)**
 - **Ground truths shape: (N, H, W, num_class) (0 or 1)**
