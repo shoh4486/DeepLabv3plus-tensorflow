@@ -318,7 +318,7 @@ class DeepLabv3plus:
         seed: (int) random seed for random modules in numpy and TensorFlow
         weight_decay_lambda: (float) L2 weight decay lambda (0.0: do not employ)
         optimizer: (str) only Adam adopted
-        gpu_alloc: (list) specifying which GPU(s) to be used; [] if to use only cpu
+        gpu_alloc: (list) specifying which GPU(s) to be used
         """
         self.sess = sess
         self.C_in = C_in
