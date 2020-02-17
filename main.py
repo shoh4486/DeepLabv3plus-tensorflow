@@ -45,6 +45,7 @@ flags.DEFINE_boolean('restore', False, 'True for restoring, False for raw traini
 flags.DEFINE_integer('start_epoch', 0, 'start epoch') 
 flags.DEFINE_integer('end_epoch', 50, 'end epoch')
 flags.DEFINE_integer('check_epoch', 1, 'check epoch')
+flags.DEFINE_bool('sess_saving_every_epoch', False, 'saving sess in every epoch')
 # if not restoring, do not concern below flags.
 flags.DEFINE_integer('restore_trial_num', 1, 'directory number of the pretrained model')
 flags.DEFINE_integer('restore_sess_num', 49, 'sess number of the pretrained model')
@@ -121,8 +122,9 @@ def main(_):
                                 config=FLAGS
                                 )
         
-        saver = tf.train.Saver()
-        saver.save(sess, os.path.join(FLAGS.save_dir, "sess"), global_step=FLAGS.end_epoch-1)
+        if not FLAGS.sess_saving_every_epoch:
+            saver = tf.train.Saver()
+            saver.save(sess, os.path.join(FLAGS.save_dir, "sess"), global_step=FLAGS.end_epoch-1)
         
         np.savetxt(os.path.join(FLAGS.save_dir, "loss_acc", "CEE_train.txt"), 
                    deeplabv3plus.CEE_train_vals)
@@ -180,7 +182,7 @@ def main(_):
                            seg_test[i, :, :, c], cmap=plt.cm.gray)
                 #imsave(os.path.join(FLAGS.save_dir, "test", "test_result%d.png" % i), seg_test[i, :, :, :-1])
         else:
-            raise NotImplementedError('pretrained session must be restored.')
+            raise NotImplementedError('Pre-trained session must be restored.')
             
 if __name__ == '__main__':
     tf.app.run()

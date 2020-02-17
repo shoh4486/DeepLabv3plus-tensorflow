@@ -6,6 +6,7 @@ tf.__version__ == '1.12.0' ~ '1.14.0'
 import tensorflow as tf
 import numpy as np
 import time
+import os
 from ops import *
 from utils import *
 
@@ -534,7 +535,10 @@ class DeepLabv3plus:
         xxx_valid: to measure the validation loss, acc
         """     
         inputs_train, inputs_train_, inputs_valid = inputs # unpacking
-        gts_train, gts_train_, gts_valid = gts
+        gts_train, gts_train_, gts_valid = gts      
+        
+        if config.sess_saving_every_epoch:
+            saver = tf.train.Saver(max_to_keep=None)
                 
         H_orig, W_orig = inputs_train.shape[1], inputs_train.shape[2] # original image size
         H_train, W_train = config.H_train, config.W_train 
@@ -723,6 +727,9 @@ class DeepLabv3plus:
                       CEE_valid: %f, miou_valid: %f, PA_valid: %f' \
                       % (epoch, lr_tmp, t2-t1, t4-t3, CEE_train_val, miou_train_val, 
                          PA_ALL_train_val, CEE_valid_val, miou_valid_val, PA_ALL_valid_val))
+                
+                if config.sess_saving_every_epoch:
+                    saver.save(self.sess, os.path.join(config.save_dir, "sess"), global_step=epoch)
 
     def evaluation(self, inputs, output_stride, gts=None):
         """
